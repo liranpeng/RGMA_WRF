@@ -1,0 +1,20 @@
+FROM docker://benjaminkirk/ncar-derecho-wrf:latest
+SHELL ["/bin/bash", "-c"]
+
+# Compile WRF-Chem
+RUN source /container/config_env.sh && \
+export WRF_CHEM=1 && \
+rm -rf /container/WRF && \
+git clone https://github.com/wrf-model/WRF.git /container/WRF && \
+cd /container/WRF && \
+./clean -a && \
+echo "34\n1" | ./configure && \
+./compile -j 8 em_real && \
+test -f ./main/wrf.exe && \
+test -f ./main/real.exe && \
+cp ./main/wrf.exe /container/wrf-chem-4.4.2/ && \
+cp ./main/real.exe /container/wrf-chem-4.4.2/ && \
+# change permission for all uses to access 
+chmod -R a+rx /container
+
+CMD ["/bin/bash"]
