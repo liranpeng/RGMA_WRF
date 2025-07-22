@@ -136,13 +136,14 @@ This repository documents the step-by-step procedure for conducting a nested WRF
 ---
 
 ## Notes
-
-- Make sure your `rename_*` and `update_*` scripts are executable and properly configured.
+- To go through this document, please first finish WPS 
+- `rename_*` saved under Script/
+- `update_*` saved under Run_WRF/AddAerosol/ 
 - Each step is designed to preserve clarity, reproducibility, and modularity across different experiment branches.
 - Adjust `namelist.input` files accordingly for different simulation stages (`init`, `restart`, `noaero`, etc.).
-
+- Use this setup steps, I have finished four cases, 2016-07-01, 2017-07-01, 2017-07-13, and 2017-07-18
 ---
 
 ## Authors
 
-This simulation pipeline was developed by [Your Name or Team] and is part of a larger study on high-resolution aerosol-cloud interactions over the ENA ARM site.
+This simulation pipeline was developed by Liran Peng and is part of RGMA project.
