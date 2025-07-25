@@ -23,13 +23,17 @@ Step 1 – Prepare the Dockerfile
 
 In your working directory, rename or copy the desired Dockerfile to Dockerfile. For example:
 
+```bash
 cp Dockerfile_nochem_mpi_and_openmp Dockerfile
+```
 
 Step 2 – Build the Image
 
 Use Podman to build and tag the image:
+```bash
 
 podman build -t heroplr/wrf-nochem-omp:test .
+```
 
 This builds the image and tags it as "test" to avoid overwriting "latest".
 
@@ -37,14 +41,19 @@ This builds the image and tags it as "test" to avoid overwriting "latest".
 Push the Image to Docker Hub
 
 Login to Docker Hub:
+```bash
 
 podman login docker.io
+```
 
 Enter your Docker Hub username and personal access token.
 
 Push the image:
+```bash
 
 podman push heroplr/wrf-nochem-omp:test
+```
+
 
 After pushing, the image is available for use on HPC clusters via Shifter.
 
@@ -52,25 +61,27 @@ After pushing, the image is available for use on HPC clusters via Shifter.
 Pull the Image on HPC (Shifter)
 
 On Perlmutter or other HPC systems supporting Shifter:
+```bash
 
 shifterimg pull docker:heroplr/wrf-nochem-omp:test
+```
 
 Verify the image:
-
+```bash
 shifterimg images | grep heroplr
-
+```
 ----------------------------------------
 Running the Container Interactively
 
 Launch an interactive shell:
-
+```bash
 shifter --image=docker:heroplr/wrf-nochem-omp:test bash
-
+```
 ----------------------------------------
 Running WRF via SLURM Batch Job
 
 Below is an example SLURM script to run wrf.exe using MPI and OpenMP:
-
+```bash
 #!/bin/bash
 #SBATCH -N 8
 #SBATCH -q debug
@@ -99,7 +110,7 @@ srun -N $nodes_total -n $total_mpi_ranks --mpi=cray_shasta \
              /container/WRF/main/wrf.exe
 
 echo "WRF completed."
-
+```
 Replace YOUR_EMAIL@domain.com with your email address.
 
 ----------------------------------------
