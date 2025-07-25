@@ -142,6 +142,39 @@ This repository documents the step-by-step procedure for conducting a nested WRF
 - Each step is designed to preserve clarity, reproducibility, and modularity across different experiment branches.
 - Adjust `namelist.input` files accordingly for different simulation stages (`init`, `restart`, `noaero`, etc.).
 - Use this setup steps, I have finished four cases, 2016-07-01, 2017-07-01, 2017-07-13, and 2017-07-18
+
+# 📂 WRF Data Backup – Directory Structure
+
+This directory contains backup data for WRF simulations on multiple dates.  
+Each date folder contains **two subfolders**:  
+
+- `Domain123` – wrf output restart namelist input boudnary files for domains 1, 2, and 3  
+- `Domain4` – wrf output restart namelist input boudnary files domain 4  
+
+---
+
+## 📁 Path Map
+
+```
+/pscratch/sd/h/heroplr/Data_To_Yan/WRF_Data_Backup/
+│
+├── 20170630/
+│   ├── Domain123/
+│   └── Domain4/
+│
+├── 20170701/
+│   ├── Domain123/
+│   └── Domain4/
+│
+├── 20170713/
+│   ├── Domain123/
+│   └── Domain4/
+│
+└── 20170718/
+    ├── Domain123/
+    └── Domain4/
+```
+
 ---
 
 ## Authors
