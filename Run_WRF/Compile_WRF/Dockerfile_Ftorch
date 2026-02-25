@@ -1,13 +1,19 @@
 # ================================================================
-# WRF-Chem + FTorch container (Option 34, GNU dmpar) — near-final
+# WRF-Chem + FTorch container (Option 34, GNU dmpar) — FIXED for Podman
 #
 # Fixes addressed:
 #  1) LibTorch requires GCC>=9  -> upgrade C/C++ compiler only
-#  2) OpenMPI ships mpi.mod (Fortran .mod) built with system gfortran
+#  2) OpenMPI ships mpi.mod built with system gfortran
 #     -> KEEP FC=system gfortran to avoid mpi.mod mismatch
 #  3) WRF external/esmf_time_f90 can use SFC (serial Fortran)
 #     -> Patch configure.wrf so SFC/DM_FC use same FC
 #  4) Linker errors ext_pnc_*  -> build/install PNetCDF and expose PNETCDF
+#  5) PNetCDF configure "cannot run C compiled programs"
+#     -> OpenMPI runtime libs are in .../lib64; include lib64 in LD_LIBRARY_PATH
+#     -> also register via ldconfig
+#
+# Podman note:
+#  - NO heredocs are used (avoids "unterminated heredoc" parse errors)
 #
 # Build context must include:
 #   docker-deps/libtorch-cxx11-abi-shared-with-deps-2.6.0+cpu.zip
@@ -60,6 +66,7 @@ RUN set -euo pipefail; \
 
 # ------------------------------------------------
 # 2) Put OpenMPI wrapper dirs on PATH (openSUSE layout varies)
+#    IMPORTANT: include BOTH lib64 and lib for runtime
 # ------------------------------------------------
 ENV PATH="/usr/lib64/mpi/gcc/openmpi4/bin:\
 /usr/lib64/mpi/gcc/openmpi3/bin:\
@@ -68,10 +75,29 @@ ENV PATH="/usr/lib64/mpi/gcc/openmpi4/bin:\
 /usr/lib64/openmpi/bin:\
 ${PATH}"
 
-ENV LD_LIBRARY_PATH="/usr/lib64/mpi/gcc/openmpi4/lib:\
+ENV LD_LIBRARY_PATH="/usr/lib64/mpi/gcc/openmpi4/lib64:\
+/usr/lib64/mpi/gcc/openmpi4/lib:\
+/usr/lib64/mpi/gcc/openmpi3/lib64:\
 /usr/lib64/mpi/gcc/openmpi3/lib:\
+/usr/lib64/mpi/gcc/openmpi2/lib64:\
+/usr/lib64/mpi/gcc/openmpi2/lib:\
 /usr/lib/openmpi/lib:\
+/usr/lib64/openmpi/lib:\
 ${LD_LIBRARY_PATH:-}"
+
+# Make runtime loader aware even without LD_LIBRARY_PATH
+RUN set -euo pipefail; \
+    { \
+      echo "/usr/lib64/mpi/gcc/openmpi4/lib64"; \
+      echo "/usr/lib64/mpi/gcc/openmpi4/lib"; \
+      echo "/usr/lib64/mpi/gcc/openmpi3/lib64"; \
+      echo "/usr/lib64/mpi/gcc/openmpi3/lib"; \
+      echo "/usr/lib64/mpi/gcc/openmpi2/lib64"; \
+      echo "/usr/lib64/mpi/gcc/openmpi2/lib"; \
+      echo "/usr/lib/openmpi/lib"; \
+      echo "/usr/lib64/openmpi/lib"; \
+    } > /etc/ld.so.conf.d/zz-openmpi.conf; \
+    ldconfig
 
 # ------------------------------------------------
 # 3) Select toolchain:
@@ -119,7 +145,7 @@ ENV OMPI_CC=${CC} \
     OMPI_FC=${FC}
 
 # ------------------------------------------------
-# 5) Verify MPI wrappers are functional
+# 5) Verify MPI wrappers are functional + runtime link works (no heredoc)
 # ------------------------------------------------
 RUN set -euo pipefail; \
     source /etc/profile.d/toolchain.sh; \
@@ -133,7 +159,16 @@ RUN set -euo pipefail; \
     (${MPI_FC} --showme:command || ${MPI_FC} -show || true) | head -n 2; \
     (mpicc --showme:command || mpicc -show || true) | head -n 2; \
     echo "=== Looking for mpi.mod ==="; \
-    find /usr -name "mpi.mod" -print | head -n 5 || true
+    find /usr -name "mpi.mod" -print | head -n 5 || true; \
+    echo "=== MPI runtime smoke test ==="; \
+    cd /tmp; \
+    echo '#include <stdio.h>' > t.c; \
+    echo 'int main(){ puts("MPI-smoke-hello"); return 0; }' >> t.c; \
+    mpicc t.c -o t.exe; \
+    echo "--- ldd(t.exe) ---"; \
+    ldd ./t.exe | egrep -i "(mpi|not found)" || true; \
+    echo "--- run(t.exe) ---"; \
+    ./t.exe
 
 # ------------------------------------------------
 # 6) Build + install PNetCDF from source (provides ext_pnc_* symbols)
@@ -147,7 +182,7 @@ RUN set -euo pipefail; \
     curl -L -o pnetcdf.tar.gz https://parallel-netcdf.github.io/Release/pnetcdf-1.12.3.tar.gz; \
     tar xzf pnetcdf.tar.gz; \
     cd pnetcdf-1.12.3; \
-    ./configure --prefix="${PNETCDF_PREFIX}" CC=mpicc FC=mpif90 CXX=mpicxx; \
+    ./configure --prefix="${PNETCDF_PREFIX}" CC=mpicc FC=mpifort CXX=mpicxx; \
     make -j "${PNETCDF_JOBS}"; \
     make install; \
     cd /; \
@@ -209,7 +244,7 @@ ENV LD_LIBRARY_PATH="${FTORCH_LIB}:${LIBTORCH_LIB}:${LD_LIBRARY_PATH}" \
     CPATH="${FTORCH_MOD}:${TORCH_ROOT}/include:${CPATH:-}"
 
 # ------------------------------------------------
-# 10) WRF-Chem compile-time flags (keep quilt on/off; we now PROVIDE PNetCDF)
+# 10) WRF-Chem compile-time flags
 # ------------------------------------------------
 ENV WRF_CHEM=1 \
     WRF_EM_CORE=1 \
@@ -217,8 +252,6 @@ ENV WRF_CHEM=1 \
     WRFIO_NCD_LARGE_FILE_SUPPORT=1 \
     USE_NETCDF4_FEATURES=0
 
-# NOTE: you previously used PNETCDF_QUILT=0 on Perlmutter.
-# We keep it 0 (fine) but we ALSO provide PNetCDF now to satisfy any quilt link.
 ENV PNETCDF_QUILT=0
 
 # ------------------------------------------------
@@ -226,15 +259,15 @@ ENV PNETCDF_QUILT=0
 # ------------------------------------------------
 WORKDIR /container/WRF
 COPY . /container/WRF/
+RUN mkdir -p /opt/ml_models
+COPY docker-deps/ml-models/mlp_wrapper.pt /opt/ml_models/mlp_wrapper.pt
 
-# Safety: delete any compiled artifacts copied from host
 RUN set -euo pipefail; \
     echo "=== Purge any prebuilt artifacts in WRF tree ==="; \
     find /container/WRF -type f \( -name "*.mod" -o -name "*.o" -o -name "*.a" \) -delete || true
 
 # ------------------------------------------------
 # 12) Configure WRF non-interactively (Option 34)
-#     Ensure env vars visible to configure: PNETCDF, NETCDF/HDF5 already in base image
 # ------------------------------------------------
 RUN set -euo pipefail; \
     source /etc/profile.d/toolchain.sh; \
@@ -248,10 +281,10 @@ RUN set -euo pipefail; \
 
 # ------------------------------------------------
 # 13) Patch configure.wrf:
-#     (A) Force SERIAL compilers to match FC/CC (fixes .mod mismatches)
-#     (B) Add FTorch include path
+#     (A) Force SERIAL compilers to match FC/CC
+#     (B) Add FTorch include path (append; do NOT clobber flags)
 #     (C) Add FTorch/LibTorch link flags into LIB_LOCAL
-#     (D) Ensure PNetCDF link path exists (fixes ext_pnc_* undefined references)
+#     (D) Ensure PNetCDF link path exists
 # ------------------------------------------------
 RUN set -euo pipefail; \
     source /etc/profile.d/toolchain.sh; \
@@ -261,19 +294,31 @@ RUN set -euo pipefail; \
     echo "=== configure.wrf BEFORE patch (compiler lines) ==="; \
     egrep '^(SFC|SCC|CCOMP|DM_FC|DM_CC)[[:space:]]*=' -n "$CFG" || true; \
     \
-    # (A) serial compilers
     sed -i "s|^SFC[[:space:]]*=.*|SFC             =       ${FC}|"   "$CFG"; \
     sed -i "s|^SCC[[:space:]]*=.*|SCC             =       ${CC}|"   "$CFG"; \
     sed -i "s|^CCOMP[[:space:]]*=.*|CCOMP           =       ${CC}|" "$CFG"; \
     \
-    # (B) add FTorch module include
-    sed -i "s|^FCFLAGS[[:space:]]*=.*|& -I${FTORCH_MOD}|" "$CFG"; \
-    sed -i "s|^FFLAGS[[:space:]]*=.*|& -I${FTORCH_MOD}|"  "$CFG"; \
+    # Append include path safely
+    sed -i -E "s|^(FCFLAGS[[:space:]]*=.*)|\\1 -I${FTORCH_MOD}|" "$CFG"; \
+    sed -i -E "s|^(FFLAGS[[:space:]]*=.*)|\\1 -I${FTORCH_MOD}|"  "$CFG"; \
     \
-    # (C) prepend LIB_FTORCH and hook into LIB_LOCAL
-    { printf 'FTORCH_LIB   := %s\nLIBTORCH_LIB := %s\nPNETCDF_LIB := %s\n# ---- FTorch + libtorch ----\nLIB_FTORCH = \\\n  -L$(FTORCH_LIB) -lftorch \\\n  -L$(LIBTORCH_LIB) -Wl,-rpath,$(LIBTORCH_LIB):$(FTORCH_LIB) \\\n  -ltorch_cpu -lc10 -lstdc++ -ldl -lpthread\n# ---- PNetCDF (for quilt ext_pnc_*) ----\nLIB_PNETCDF = \\\n  -L$(PNETCDF_LIB) -lpnetcdf\n# Hook into WRF's standard link variable\nLIB_LOCAL = $(LIB_FTORCH) $(LIB_PNETCDF)\n\n' \
-          "${FTORCH_LIB}" "${LIBTORCH_LIB}" "${PNETCDF_PREFIX}/lib"; \
-      cat "$CFG"; } > /tmp/cfg_patched && mv /tmp/cfg_patched "$CFG"; \
+    # Prepend library variables and override LIB_LOCAL
+    { \
+      printf 'FTORCH_LIB   := %s\n' "${FTORCH_LIB}"; \
+      printf 'LIBTORCH_LIB := %s\n' "${LIBTORCH_LIB}"; \
+      printf 'PNETCDF_LIB  := %s\n' "${PNETCDF_PREFIX}/lib"; \
+      printf '# ---- FTorch + libtorch ----\n'; \
+      printf 'LIB_FTORCH = \\\n'; \
+      printf '  -L$(FTORCH_LIB) -lftorch \\\n'; \
+      printf '  -L$(LIBTORCH_LIB) -Wl,-rpath,$(LIBTORCH_LIB):$(FTORCH_LIB) \\\n'; \
+      printf '  -ltorch_cpu -lc10 -lstdc++ -ldl -lpthread\n'; \
+      printf '# ---- PNetCDF (for quilt ext_pnc_*) ----\n'; \
+      printf 'LIB_PNETCDF = \\\n'; \
+      printf '  -L$(PNETCDF_LIB) -lpnetcdf\n'; \
+      printf '# Hook into WRF link variable\n'; \
+      printf 'LIB_LOCAL = $(LIB_FTORCH) $(LIB_PNETCDF)\n\n'; \
+      cat "$CFG"; \
+    } > /tmp/cfg_patched && mv /tmp/cfg_patched "$CFG"; \
     \
     echo "=== configure.wrf AFTER patch (compiler lines) ==="; \
     egrep '^(SFC|SCC|CCOMP|DM_FC|DM_CC)[[:space:]]*=' -n "$CFG" || true
@@ -288,7 +333,7 @@ RUN set -euo pipefail; \
     echo "CC=$CC  -> $($CC --version | head -1)"; \
     echo "FC=$FC  -> $($FC --version | head -1)"; \
     echo "OMPI_FC=$OMPI_FC"; \
-    (mpif90 --showme:command || mpif90 -show || true) | head -n 2; \
+    (mpifort --showme:command || mpifort -show || true) | head -n 2; \
     echo "PNETCDF=$PNETCDF"; \
     ls -lh "${PNETCDF_PREFIX}/lib/libpnetcdf"* 2>/dev/null || true; \
     ./compile -j "${WRF_JOBS}" em_real 2>&1 | tee /tmp/compile_wrf.log; \
@@ -301,6 +346,6 @@ RUN set -euo pipefail; \
     fi; \
     test -f main/real.exe || { echo "ERROR: real.exe not built"; exit 1; }
 
+    
 WORKDIR /container/WRF/run
 CMD ["/bin/bash"]
-
