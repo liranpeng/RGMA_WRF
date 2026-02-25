@@ -1,0 +1,306 @@
+# ================================================================
+# WRF-Chem + FTorch container (Option 34, GNU dmpar) — near-final
+#
+# Fixes addressed:
+#  1) LibTorch requires GCC>=9  -> upgrade C/C++ compiler only
+#  2) OpenMPI ships mpi.mod (Fortran .mod) built with system gfortran
+#     -> KEEP FC=system gfortran to avoid mpi.mod mismatch
+#  3) WRF external/esmf_time_f90 can use SFC (serial Fortran)
+#     -> Patch configure.wrf so SFC/DM_FC use same FC
+#  4) Linker errors ext_pnc_*  -> build/install PNetCDF and expose PNETCDF
+#
+# Build context must include:
+#   docker-deps/libtorch-cxx11-abi-shared-with-deps-2.6.0+cpu.zip
+#   docker-deps/FTorch/    (FTorch source tree with CMakeLists.txt, src/, etc.)
+# ================================================================
+
+FROM benjaminkirk/ncar-derecho-wrf:latest
+SHELL ["/bin/bash", "-c"]
+
+ARG WRF_CONFIGURE_OPTION=34
+ARG WRF_JOBS=8
+ARG FTORCH_JOBS=8
+ARG PNETCDF_JOBS=8
+
+ENV TORCH_ROOT=/opt/libtorch \
+    FTORCH_INSTALL=/opt/ftorch \
+    PNETCDF_PREFIX=/opt/pnetcdf
+
+# ------------------------------------------------
+# 1) Install OpenMPI + build tools + newer GCC for C/C++
+# ------------------------------------------------
+RUN set -euo pipefail; \
+    if ! command -v zypper >/dev/null 2>&1; then \
+        echo "ERROR: expected openSUSE(zypper) base image"; exit 1; \
+    fi; \
+    zypper --non-interactive refresh; \
+    \
+    # tools
+    zypper --non-interactive install \
+        cmake make git unzip curl \
+        findutils grep gawk which tar gzip sed coreutils \
+        m4 autoconf automake libtool || true; \
+    \
+    # OpenMPI runtime + devel (wrappers + wrapper-data + mpi.mod)
+    ( zypper --non-interactive install openmpi4 openmpi4-devel 2>/dev/null || \
+      zypper --non-interactive install openmpi3 openmpi3-devel 2>/dev/null || \
+      zypper --non-interactive install openmpi openmpi-devel  2>/dev/null || \
+      { echo "ERROR: could not install OpenMPI"; exit 1; } ); \
+    \
+    # newer GCC for C/C++ (do NOT force newer gfortran; keep system gfortran for mpi.mod)
+    zypper --non-interactive install gcc12 gcc12-c++ 2>/dev/null || \
+    zypper --non-interactive install gcc11 gcc11-c++ 2>/dev/null || \
+    zypper --non-interactive install gcc10 gcc10-c++ 2>/dev/null || \
+    zypper --non-interactive install gcc gcc-c++; \
+    \
+    # ensure Fortran compiler exists (system gfortran)
+    zypper --non-interactive install gcc-fortran || true; \
+    \
+    zypper clean -a
+
+# ------------------------------------------------
+# 2) Put OpenMPI wrapper dirs on PATH (openSUSE layout varies)
+# ------------------------------------------------
+ENV PATH="/usr/lib64/mpi/gcc/openmpi4/bin:\
+/usr/lib64/mpi/gcc/openmpi3/bin:\
+/usr/lib64/mpi/gcc/openmpi2/bin:\
+/usr/lib/openmpi/bin:\
+/usr/lib64/openmpi/bin:\
+${PATH}"
+
+ENV LD_LIBRARY_PATH="/usr/lib64/mpi/gcc/openmpi4/lib:\
+/usr/lib64/mpi/gcc/openmpi3/lib:\
+/usr/lib/openmpi/lib:\
+${LD_LIBRARY_PATH:-}"
+
+# ------------------------------------------------
+# 3) Select toolchain:
+#    - CC/CXX: newest GCC available (>=9 required by LibTorch headers)
+#    - FC: system gfortran (MUST match OpenMPI mpi.mod)
+# ------------------------------------------------
+RUN set -euo pipefail; \
+    if command -v gcc-12 >/dev/null 2>&1; then \
+      echo "export CC=gcc-12" > /etc/profile.d/toolchain.sh; \
+      echo "export CXX=g++-12" >> /etc/profile.d/toolchain.sh; \
+    elif command -v gcc-11 >/dev/null 2>&1; then \
+      echo "export CC=gcc-11" > /etc/profile.d/toolchain.sh; \
+      echo "export CXX=g++-11" >> /etc/profile.d/toolchain.sh; \
+    elif command -v gcc-10 >/dev/null 2>&1; then \
+      echo "export CC=gcc-10" > /etc/profile.d/toolchain.sh; \
+      echo "export CXX=g++-10" >> /etc/profile.d/toolchain.sh; \
+    else \
+      echo "export CC=gcc" > /etc/profile.d/toolchain.sh; \
+      echo "export CXX=g++" >> /etc/profile.d/toolchain.sh; \
+    fi; \
+    echo "export FC=gfortran" >> /etc/profile.d/toolchain.sh; \
+    chmod +x /etc/profile.d/toolchain.sh; \
+    source /etc/profile.d/toolchain.sh; \
+    echo "Selected toolchain:"; \
+    echo "CC=$CC  -> $($CC --version | head -1)"; \
+    echo "CXX=$CXX -> $($CXX --version | head -1)"; \
+    echo "FC=$FC  -> $($FC --version | head -1)"; \
+    MAJOR=$($CC -dumpversion | cut -d. -f1); \
+    if [ "${MAJOR}" -lt 9 ]; then \
+      echo "ERROR: C/C++ compiler must be GCC>=9 for LibTorch, got $($CC -dumpversion)"; exit 1; \
+    fi
+
+# ------------------------------------------------
+# 4) Force OpenMPI wrappers to use SAME compilers (GLOBAL)
+# ------------------------------------------------
+RUN set -euo pipefail; \
+    source /etc/profile.d/toolchain.sh; \
+    echo "export OMPI_CC=${CC}"  >  /etc/profile.d/ompi_compilers.sh; \
+    echo "export OMPI_CXX=${CXX}" >> /etc/profile.d/ompi_compilers.sh; \
+    echo "export OMPI_FC=${FC}"  >> /etc/profile.d/ompi_compilers.sh; \
+    chmod +x /etc/profile.d/ompi_compilers.sh
+
+ENV OMPI_CC=${CC} \
+    OMPI_CXX=${CXX} \
+    OMPI_FC=${FC}
+
+# ------------------------------------------------
+# 5) Verify MPI wrappers are functional
+# ------------------------------------------------
+RUN set -euo pipefail; \
+    source /etc/profile.d/toolchain.sh; \
+    source /etc/profile.d/ompi_compilers.sh; \
+    echo "=== MPI wrapper sanity ==="; \
+    echo "mpicc  : $(command -v mpicc  || echo NOTFOUND)"; \
+    echo "mpifort: $(command -v mpifort|| echo NOTFOUND)"; \
+    echo "mpif90 : $(command -v mpif90 || echo NOTFOUND)"; \
+    if command -v mpifort >/dev/null 2>&1; then MPI_FC=mpifort; else MPI_FC=mpif90; fi; \
+    echo "Using MPI Fortran wrapper: ${MPI_FC}"; \
+    (${MPI_FC} --showme:command || ${MPI_FC} -show || true) | head -n 2; \
+    (mpicc --showme:command || mpicc -show || true) | head -n 2; \
+    echo "=== Looking for mpi.mod ==="; \
+    find /usr -name "mpi.mod" -print | head -n 5 || true
+
+# ------------------------------------------------
+# 6) Build + install PNetCDF from source (provides ext_pnc_* symbols)
+# ------------------------------------------------
+ENV PNETCDF=${PNETCDF_PREFIX}
+RUN set -euo pipefail; \
+    source /etc/profile.d/toolchain.sh; \
+    source /etc/profile.d/ompi_compilers.sh; \
+    echo "=== Build PNetCDF ==="; \
+    cd /tmp; \
+    curl -L -o pnetcdf.tar.gz https://parallel-netcdf.github.io/Release/pnetcdf-1.12.3.tar.gz; \
+    tar xzf pnetcdf.tar.gz; \
+    cd pnetcdf-1.12.3; \
+    ./configure --prefix="${PNETCDF_PREFIX}" CC=mpicc FC=mpif90 CXX=mpicxx; \
+    make -j "${PNETCDF_JOBS}"; \
+    make install; \
+    cd /; \
+    rm -rf /tmp/pnetcdf-1.12.3 /tmp/pnetcdf.tar.gz; \
+    echo "=== PNetCDF installed ==="; \
+    find "${PNETCDF_PREFIX}" -maxdepth 2 -type f \( -name "libpnetcdf.so*" -o -name "libpnetcdf.a" \) -print
+
+ENV LD_LIBRARY_PATH="${PNETCDF_PREFIX}/lib:${PNETCDF_PREFIX}/lib64:${LD_LIBRARY_PATH}" \
+    LIBRARY_PATH="${PNETCDF_PREFIX}/lib:${PNETCDF_PREFIX}/lib64:${LIBRARY_PATH:-}" \
+    CPATH="${PNETCDF_PREFIX}/include:${CPATH:-}"
+
+# ------------------------------------------------
+# 7) Unpack LibTorch CPU ZIP (from docker-deps/)
+# ------------------------------------------------
+COPY docker-deps/libtorch-cxx11-abi-shared-with-deps-2.6.0+cpu.zip /tmp/libtorch.zip
+RUN set -euo pipefail; \
+    unzip -q /tmp/libtorch.zip -d /opt; \
+    rm /tmp/libtorch.zip; \
+    test -d "${TORCH_ROOT}/include" || { echo "ERROR: missing ${TORCH_ROOT}/include"; exit 1; }; \
+    test -d "${TORCH_ROOT}/lib"     || { echo "ERROR: missing ${TORCH_ROOT}/lib"; exit 1; }; \
+    ls -lh "${TORCH_ROOT}/lib/libtorch_cpu.so"* || true; \
+    find "${TORCH_ROOT}" -maxdepth 5 -name TorchConfig.cmake -print | head -n 5
+
+# ------------------------------------------------
+# 8) Build FTorch from source (C++ uses new GCC, Fortran uses system gfortran)
+# ------------------------------------------------
+COPY docker-deps/FTorch/ /tmp/FTorch/
+RUN set -euo pipefail; \
+    source /etc/profile.d/toolchain.sh; \
+    source /etc/profile.d/ompi_compilers.sh; \
+    echo "=== Build FTorch ==="; \
+    echo "CC=$CC  -> $($CC --version | head -1)"; \
+    echo "FC=$FC  -> $($FC --version | head -1)"; \
+    rm -rf /tmp/FTorch_build; mkdir -p /tmp/FTorch_build; \
+    cmake -S /tmp/FTorch -B /tmp/FTorch_build \
+      -DCMAKE_BUILD_TYPE=Release \
+      -DCMAKE_INSTALL_PREFIX="${FTORCH_INSTALL}" \
+      -DCMAKE_PREFIX_PATH="${TORCH_ROOT}" \
+      -DCMAKE_C_COMPILER="${CC}" \
+      -DCMAKE_CXX_COMPILER="${CXX}" \
+      -DCMAKE_Fortran_COMPILER="${FC}" \
+      -DFTORCH_BUILD_TESTS=OFF; \
+    cmake --build /tmp/FTorch_build -- -j "${FTORCH_JOBS}"; \
+    cmake --install /tmp/FTorch_build; \
+    rm -rf /tmp/FTorch /tmp/FTorch_build; \
+    test -f "${FTORCH_INSTALL}/include/ftorch/ftorch.mod" || \
+      { echo "ERROR: ftorch.mod not found under ${FTORCH_INSTALL}/include/ftorch"; \
+        find ${FTORCH_INSTALL}/include -maxdepth 4 -type f -name "*.mod" -print; exit 1; }
+
+# ------------------------------------------------
+# 9) Export FTorch/LibTorch paths for build + runtime
+# ------------------------------------------------
+ENV FTORCH_MOD="${FTORCH_INSTALL}/include/ftorch" \
+    FTORCH_LIB="${FTORCH_INSTALL}/lib64" \
+    LIBTORCH_LIB="${TORCH_ROOT}/lib"
+
+ENV LD_LIBRARY_PATH="${FTORCH_LIB}:${LIBTORCH_LIB}:${LD_LIBRARY_PATH}" \
+    LIBRARY_PATH="${FTORCH_LIB}:${LIBTORCH_LIB}:${LIBRARY_PATH:-}" \
+    CPATH="${FTORCH_MOD}:${TORCH_ROOT}/include:${CPATH:-}"
+
+# ------------------------------------------------
+# 10) WRF-Chem compile-time flags (keep quilt on/off; we now PROVIDE PNetCDF)
+# ------------------------------------------------
+ENV WRF_CHEM=1 \
+    WRF_EM_CORE=1 \
+    NETCDF_classic=1 \
+    WRFIO_NCD_LARGE_FILE_SUPPORT=1 \
+    USE_NETCDF4_FEATURES=0
+
+# NOTE: you previously used PNETCDF_QUILT=0 on Perlmutter.
+# We keep it 0 (fine) but we ALSO provide PNetCDF now to satisfy any quilt link.
+ENV PNETCDF_QUILT=0
+
+# ------------------------------------------------
+# 11) Copy WRF source tree
+# ------------------------------------------------
+WORKDIR /container/WRF
+COPY . /container/WRF/
+
+# Safety: delete any compiled artifacts copied from host
+RUN set -euo pipefail; \
+    echo "=== Purge any prebuilt artifacts in WRF tree ==="; \
+    find /container/WRF -type f \( -name "*.mod" -o -name "*.o" -o -name "*.a" \) -delete || true
+
+# ------------------------------------------------
+# 12) Configure WRF non-interactively (Option 34)
+#     Ensure env vars visible to configure: PNETCDF, NETCDF/HDF5 already in base image
+# ------------------------------------------------
+RUN set -euo pipefail; \
+    source /etc/profile.d/toolchain.sh; \
+    source /etc/profile.d/ompi_compilers.sh; \
+    echo "=== Configure env ==="; \
+    echo "PNETCDF=${PNETCDF}"; \
+    echo "CC=$CC  FC=$FC"; \
+    ./clean -a 2>/dev/null || true; \
+    printf '%s\n%s\n' "${WRF_CONFIGURE_OPTION}" "1" | ./configure 2>&1 | tee /tmp/configure.log; \
+    test -f configure.wrf
+
+# ------------------------------------------------
+# 13) Patch configure.wrf:
+#     (A) Force SERIAL compilers to match FC/CC (fixes .mod mismatches)
+#     (B) Add FTorch include path
+#     (C) Add FTorch/LibTorch link flags into LIB_LOCAL
+#     (D) Ensure PNetCDF link path exists (fixes ext_pnc_* undefined references)
+# ------------------------------------------------
+RUN set -euo pipefail; \
+    source /etc/profile.d/toolchain.sh; \
+    source /etc/profile.d/ompi_compilers.sh; \
+    CFG=/container/WRF/configure.wrf; \
+    \
+    echo "=== configure.wrf BEFORE patch (compiler lines) ==="; \
+    egrep '^(SFC|SCC|CCOMP|DM_FC|DM_CC)[[:space:]]*=' -n "$CFG" || true; \
+    \
+    # (A) serial compilers
+    sed -i "s|^SFC[[:space:]]*=.*|SFC             =       ${FC}|"   "$CFG"; \
+    sed -i "s|^SCC[[:space:]]*=.*|SCC             =       ${CC}|"   "$CFG"; \
+    sed -i "s|^CCOMP[[:space:]]*=.*|CCOMP           =       ${CC}|" "$CFG"; \
+    \
+    # (B) add FTorch module include
+    sed -i "s|^FCFLAGS[[:space:]]*=.*|& -I${FTORCH_MOD}|" "$CFG"; \
+    sed -i "s|^FFLAGS[[:space:]]*=.*|& -I${FTORCH_MOD}|"  "$CFG"; \
+    \
+    # (C) prepend LIB_FTORCH and hook into LIB_LOCAL
+    { printf 'FTORCH_LIB   := %s\nLIBTORCH_LIB := %s\nPNETCDF_LIB := %s\n# ---- FTorch + libtorch ----\nLIB_FTORCH = \\\n  -L$(FTORCH_LIB) -lftorch \\\n  -L$(LIBTORCH_LIB) -Wl,-rpath,$(LIBTORCH_LIB):$(FTORCH_LIB) \\\n  -ltorch_cpu -lc10 -lstdc++ -ldl -lpthread\n# ---- PNetCDF (for quilt ext_pnc_*) ----\nLIB_PNETCDF = \\\n  -L$(PNETCDF_LIB) -lpnetcdf\n# Hook into WRF's standard link variable\nLIB_LOCAL = $(LIB_FTORCH) $(LIB_PNETCDF)\n\n' \
+          "${FTORCH_LIB}" "${LIBTORCH_LIB}" "${PNETCDF_PREFIX}/lib"; \
+      cat "$CFG"; } > /tmp/cfg_patched && mv /tmp/cfg_patched "$CFG"; \
+    \
+    echo "=== configure.wrf AFTER patch (compiler lines) ==="; \
+    egrep '^(SFC|SCC|CCOMP|DM_FC|DM_CC)[[:space:]]*=' -n "$CFG" || true
+
+# ------------------------------------------------
+# 14) Compile WRF-Chem
+# ------------------------------------------------
+RUN set -euo pipefail; \
+    source /etc/profile.d/toolchain.sh; \
+    source /etc/profile.d/ompi_compilers.sh; \
+    echo "=== Final compiler consistency check ==="; \
+    echo "CC=$CC  -> $($CC --version | head -1)"; \
+    echo "FC=$FC  -> $($FC --version | head -1)"; \
+    echo "OMPI_FC=$OMPI_FC"; \
+    (mpif90 --showme:command || mpif90 -show || true) | head -n 2; \
+    echo "PNETCDF=$PNETCDF"; \
+    ls -lh "${PNETCDF_PREFIX}/lib/libpnetcdf"* 2>/dev/null || true; \
+    ./compile -j "${WRF_JOBS}" em_real 2>&1 | tee /tmp/compile_wrf.log; \
+    if ! test -f main/wrf.exe; then \
+      echo "=== Link/compile errors (tail) ==="; \
+      grep -iE "(undefined reference|cannot find -l|ld returned|Fatal Error:|fatal error|Error:)" /tmp/compile_wrf.log | tail -200 || true; \
+      echo "=== Last 120 lines ==="; \
+      tail -120 /tmp/compile_wrf.log; \
+      exit 1; \
+    fi; \
+    test -f main/real.exe || { echo "ERROR: real.exe not built"; exit 1; }
+
+WORKDIR /container/WRF/run
+CMD ["/bin/bash"]
+
