@@ -566,7 +566,7 @@ def print_activation_results(res, label="Activation-based Partitioning"):
 if __name__ == "__main__":
 
     # ===================================================================
-    # YOUR OBSERVATION-BASED CASE
+    # OBSERVATION-BASED CASE
     # ===================================================================
     #
     # Known from observation / WRF output:
@@ -589,7 +589,7 @@ if __name__ == "__main__":
     sigma_acc = SGINIA_DEFAULT # 2.00
     sigma_cor = SGINIC_DEFAULT # 2.50
 
-    # --- Your observations ---
+    # --- observations ---
     q_total    = 4.5e-10       # total aerosol mass mixing ratio [kg/kg]
     CCN_total  = 50.0          # total CCN [# cm^-3]
     f_act_nuc  = 0.7           # activation fraction, nuclei mode
@@ -613,7 +613,7 @@ if __name__ == "__main__":
         CCN_total, q_total,
     )
     print_activation_results(res,
-        "Your case: q=4.5e-10 kg/kg, CCN=50 cm-3, f_act=0.7/0.8/1.0")
+        "case: q=4.5e-10 kg/kg, CCN=50 cm-3, f_act=0.7/0.8/1.0")
 
     # --- Sensitivity: vary assumed number fractions ---
     print("=" * 70)
