@@ -1,351 +1,496 @@
 # ================================================================
-# WRF-Chem + FTorch container (Option 34, GNU dmpar) — FIXED for Podman
+# WRF-Chem + FTorch container for NERSC Shifter / Perlmutter
+# RockyLinux 9 base
 #
-# Fixes addressed:
-#  1) LibTorch requires GCC>=9  -> upgrade C/C++ compiler only
-#  2) OpenMPI ships mpi.mod built with system gfortran
-#     -> KEEP FC=system gfortran to avoid mpi.mod mismatch
-#  3) WRF external/esmf_time_f90 can use SFC (serial Fortran)
-#     -> Patch configure.wrf so SFC/DM_FC use same FC
-#  4) Linker errors ext_pnc_*  -> build/install PNetCDF and expose PNETCDF
-#  5) PNetCDF configure "cannot run C compiled programs"
-#     -> OpenMPI runtime libs are in .../lib64; include lib64 in LD_LIBRARY_PATH
-#     -> also register via ldconfig
+# MPI strategy:
+#   - Build with MPICH installed inside the image (shared libs)
+#   - Use an older MPICH line closer to Cray MPICH ABI expectations
+#   - Let host Cray MPICH win at runtime under Shifter
+#   - Strip /opt/mpich from final RUNPATH after build
 #
-# Podman note:
-#  - NO heredocs are used (avoids "unterminated heredoc" parse errors)
+# Intended runtime:
+#   module load cpu
+#   module load cray-mpich
+#   srun ... --mpi=cray_shasta shifter /container/WRF/main/wrf.exe
 #
-# Build context must include:
-#   docker-deps/libtorch-cxx11-abi-shared-with-deps-2.6.0+cpu.zip
-#   docker-deps/FTorch/    (FTorch source tree with CMakeLists.txt, src/, etc.)
+# Do NOT use:
+#   shifter --module=none
+# Do NOT force:
+#   LD_LIBRARY_PATH=/opt/mpich/lib:...
 # ================================================================
 
-FROM benjaminkirk/ncar-derecho-wrf:latest
+FROM rockylinux:9
 SHELL ["/bin/bash", "-c"]
 
+# -------------------------------
+# Build knobs
+# -------------------------------
 ARG WRF_CONFIGURE_OPTION=34
 ARG WRF_JOBS=8
 ARG FTORCH_JOBS=8
+ARG MPICH_JOBS=8
+ARG HDF5_JOBS=8
+ARG NETCDF_JOBS=8
 ARG PNETCDF_JOBS=8
+ARG PATCHELF_JOBS=4
 
-ENV TORCH_ROOT=/opt/libtorch \
+# -------------------------------
+# Version pins
+# -------------------------------
+ARG MPICH_VER=3.4.3
+ARG HDF5_VER=1.14.3
+ARG NETCDF_C_VER=4.9.2
+ARG NETCDF_FORTRAN_VER=4.6.1
+ARG PNETCDF_VER=1.12.3
+ARG PATCHELF_VER=0.18.0
+
+# -------------------------------
+# Install prefixes
+# -------------------------------
+ENV PREFIX=/opt \
+    MPICH_PREFIX=/opt/mpich \
+    HDF5_PREFIX=/opt/hdf5 \
+    NETCDF_PREFIX=/opt/netcdf \
+    PNETCDF_PREFIX=/opt/pnetcdf \
+    TORCH_ROOT=/opt/libtorch \
     FTORCH_INSTALL=/opt/ftorch \
-    PNETCDF_PREFIX=/opt/pnetcdf
+    WRF_DIR=/container/WRF
 
 # ------------------------------------------------
-# 1) Install OpenMPI + build tools + newer GCC for C/C++
+# 0) Retry wrapper
 # ------------------------------------------------
 RUN set -euo pipefail; \
-    if ! command -v zypper >/dev/null 2>&1; then \
-        echo "ERROR: expected openSUSE(zypper) base image"; exit 1; \
+    install -d /usr/local/bin; \
+    printf '%s\n' \
+'#!/usr/bin/env bash' \
+'set -euo pipefail' \
+'n="${1:-5}"; shift || true' \
+'delay="${1:-10}"; shift || true' \
+'cmd=("$@")' \
+'i=1' \
+'while true; do' \
+'  if "${cmd[@]}"; then exit 0; fi' \
+'  if [ "$i" -ge "$n" ]; then' \
+'    echo "ERROR: command failed after $i attempts: ${cmd[*]}" >&2' \
+'    exit 1' \
+'  fi' \
+'  echo "WARN: attempt $i failed, retrying in ${delay}s: ${cmd[*]}" >&2' \
+'  sleep "$delay"' \
+'  i=$((i+1))' \
+'done' \
+    > /usr/local/bin/retry.sh; \
+    chmod +x /usr/local/bin/retry.sh; \
+    /usr/local/bin/retry.sh 1 0 true
+
+# ------------------------------------------------
+# 1) Bootstrap: tools needed to build patchelf
+# ------------------------------------------------
+RUN set -euo pipefail; \
+    retry.sh 5 10 dnf -y update; \
+    retry.sh 5 10 dnf -y install \
+      gcc gcc-c++ make \
+      curl-minimal \
+      autoconf automake libtool \
+      tar gzip xz; \
+    dnf -y clean all; \
+    cd /tmp; \
+    curl -L -o patchelf.tar.gz \
+      "https://github.com/NixOS/patchelf/releases/download/${PATCHELF_VER}/patchelf-${PATCHELF_VER}.tar.gz"; \
+    tar xzf patchelf.tar.gz; \
+    cd "patchelf-${PATCHELF_VER}"; \
+    ./configure --prefix=/usr/local; \
+    make -j "${PATCHELF_JOBS}"; \
+    make install; \
+    cd /; \
+    rm -rf "/tmp/patchelf-${PATCHELF_VER}" /tmp/patchelf.tar.gz; \
+    command -v patchelf; \
+    patchelf --version
+
+# ------------------------------------------------
+# 2) OS deps + libtirpc
+# ------------------------------------------------
+RUN set -euo pipefail; \
+    retry.sh 5 10 dnf -y update; \
+    retry.sh 5 10 dnf -y install dnf-plugins-core; \
+    dnf config-manager --set-enabled crb || true; \
+    retry.sh 5 10 dnf -y makecache; \
+    retry.sh 5 10 dnf -y install \
+      gcc gcc-c++ gcc-gfortran \
+      make cmake git unzip patch \
+      curl-minimal \
+      m4 autoconf automake libtool pkgconfig \
+      which findutils file \
+      zlib-devel bzip2-devel xz-devel \
+      openssl-devel libcurl-devel \
+      libxml2-devel \
+      perl python3 \
+      tcsh csh \
+      time \
+      binutils \
+      diffutils \
+      sed gawk grep \
+      hostname procps-ng \
+      libtirpc libtirpc-devel; \
+    dnf -y clean all; \
+    command -v time; \
+    ln -sf /usr/bin/time /bin/time || true; \
+    \
+    echo "=== Detecting libtirpc include root ==="; \
+    if [ -f /usr/include/tirpc/rpc/rpc.h ] || [ -f /usr/include/tirpc/rpc/xdr.h ]; then \
+      echo "TIRPC_INC=/usr/include/tirpc" > /etc/profile.d/tirpc.sh; \
+    else \
+      inc="$(rpm -ql libtirpc-devel 2>/dev/null | grep -E '/rpc/(rpc|xdr)\.h$' | head -n 1 | sed 's|/rpc/[^/]*$||' || true)"; \
+      if [ -n "${inc}" ] && [ -d "${inc}" ]; then \
+        echo "TIRPC_INC=${inc}" > /etc/profile.d/tirpc.sh; \
+      else \
+        echo "TIRPC_INC=/usr/include/tirpc" > /etc/profile.d/tirpc.sh; \
+        echo "WARN: could not auto-detect tirpc headers; defaulting to /usr/include/tirpc" >&2; \
+        rpm -ql libtirpc-devel | head -80 >&2 || true; \
+      fi; \
     fi; \
-    zypper --non-interactive refresh; \
-    \
-    # tools
-    zypper --non-interactive install \
-        cmake make git unzip curl \
-        findutils grep gawk which tar gzip sed coreutils \
-        m4 autoconf automake libtool || true; \
-    \
-    # OpenMPI runtime + devel (wrappers + wrapper-data + mpi.mod)
-    ( zypper --non-interactive install openmpi4 openmpi4-devel 2>/dev/null || \
-      zypper --non-interactive install openmpi3 openmpi3-devel 2>/dev/null || \
-      zypper --non-interactive install openmpi openmpi-devel  2>/dev/null || \
-      { echo "ERROR: could not install OpenMPI"; exit 1; } ); \
-    \
-    # newer GCC for C/C++ (do NOT force newer gfortran; keep system gfortran for mpi.mod)
-    zypper --non-interactive install gcc12 gcc12-c++ 2>/dev/null || \
-    zypper --non-interactive install gcc11 gcc11-c++ 2>/dev/null || \
-    zypper --non-interactive install gcc10 gcc10-c++ 2>/dev/null || \
-    zypper --non-interactive install gcc gcc-c++; \
-    \
-    # ensure Fortran compiler exists (system gfortran)
-    zypper --non-interactive install gcc-fortran || true; \
-    \
-    zypper clean -a
+    chmod 0644 /etc/profile.d/tirpc.sh; \
+    echo "--- /etc/profile.d/tirpc.sh ---"; \
+    cat /etc/profile.d/tirpc.sh
 
 # ------------------------------------------------
-# 2) Put OpenMPI wrapper dirs on PATH (openSUSE layout varies)
-#    IMPORTANT: include BOTH lib64 and lib for runtime
+# 3) MPICH (shared, ABI-friendly for Shifter)
+#    MPICH 3.4.x needs explicit device selection
+#    gfortran may require -fallow-argument-mismatch
 # ------------------------------------------------
-ENV PATH="/usr/lib64/mpi/gcc/openmpi4/bin:\
-/usr/lib64/mpi/gcc/openmpi3/bin:\
-/usr/lib64/mpi/gcc/openmpi2/bin:\
-/usr/lib/openmpi/bin:\
-/usr/lib64/openmpi/bin:\
-${PATH}"
-
-ENV LD_LIBRARY_PATH="/usr/lib64/mpi/gcc/openmpi4/lib64:\
-/usr/lib64/mpi/gcc/openmpi4/lib:\
-/usr/lib64/mpi/gcc/openmpi3/lib64:\
-/usr/lib64/mpi/gcc/openmpi3/lib:\
-/usr/lib64/mpi/gcc/openmpi2/lib64:\
-/usr/lib64/mpi/gcc/openmpi2/lib:\
-/usr/lib/openmpi/lib:\
-/usr/lib64/openmpi/lib:\
-${LD_LIBRARY_PATH:-}"
-
-# Make runtime loader aware even without LD_LIBRARY_PATH
 RUN set -euo pipefail; \
-    { \
-      echo "/usr/lib64/mpi/gcc/openmpi4/lib64"; \
-      echo "/usr/lib64/mpi/gcc/openmpi4/lib"; \
-      echo "/usr/lib64/mpi/gcc/openmpi3/lib64"; \
-      echo "/usr/lib64/mpi/gcc/openmpi3/lib"; \
-      echo "/usr/lib64/mpi/gcc/openmpi2/lib64"; \
-      echo "/usr/lib64/mpi/gcc/openmpi2/lib"; \
-      echo "/usr/lib/openmpi/lib"; \
-      echo "/usr/lib64/openmpi/lib"; \
-    } > /etc/ld.so.conf.d/zz-openmpi.conf; \
+    cd /tmp; \
+    curl -L -o mpich.tar.gz "https://www.mpich.org/static/downloads/${MPICH_VER}/mpich-${MPICH_VER}.tar.gz"; \
+    tar xzf mpich.tar.gz; \
+    cd "mpich-${MPICH_VER}"; \
+    ./configure \
+      --prefix="${MPICH_PREFIX}" \
+      --enable-shared \
+      --disable-static \
+      --with-device=ch4:ofi \
+      FC=gfortran \
+      F77=gfortran \
+      FCFLAGS="-fallow-argument-mismatch" \
+      FFLAGS="-fallow-argument-mismatch" \
+      2>&1 | tee /tmp/mpich_configure.log; \
+    make -j "${MPICH_JOBS}"; \
+    make install; \
+    cd /; \
+    rm -rf "/tmp/mpich-${MPICH_VER}" /tmp/mpich.tar.gz
+
+ENV PATH="${MPICH_PREFIX}/bin:${PATH}" \
+    LD_LIBRARY_PATH="${MPICH_PREFIX}/lib:${LD_LIBRARY_PATH:-}" \
+    CPATH="${MPICH_PREFIX}/include:${CPATH:-}" \
+    LIBRARY_PATH="${MPICH_PREFIX}/lib:${LIBRARY_PATH:-}" \
+    MPI_HOME="${MPICH_PREFIX}"
+
+RUN set -euo pipefail; \
+    echo "${MPICH_PREFIX}/lib" > /etc/ld.so.conf.d/zz-mpich.conf; \
+    ldconfig; \
+    command -v mpicc mpifort mpiexec; \
+    test -f "${MPICH_PREFIX}/include/mpif.h"; \
+    mpicc -show || true; \
+    mpifort -show || true; \
+    nm -D "${MPICH_PREFIX}/lib/libmpi.so" | grep ' MPI_Comm_f2c$' || true
+
+# ------------------------------------------------
+# 4) HDF5 (shared + Fortran)
+# ------------------------------------------------
+RUN set -euo pipefail; \
+    cd /tmp; \
+    curl -L -o hdf5.tar.gz "https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.14/hdf5-${HDF5_VER}/src/hdf5-${HDF5_VER}.tar.gz"; \
+    tar xzf hdf5.tar.gz; \
+    cd "hdf5-${HDF5_VER}"; \
+    CC=gcc FC=gfortran ./configure \
+      --prefix="${HDF5_PREFIX}" \
+      --enable-shared --disable-static \
+      --enable-fortran \
+      --with-zlib=yes; \
+    make -j "${HDF5_JOBS}"; \
+    make install; \
+    cd /; \
+    rm -rf "/tmp/hdf5-${HDF5_VER}" /tmp/hdf5.tar.gz; \
+    echo "${HDF5_PREFIX}/lib" > /etc/ld.so.conf.d/zz-hdf5.conf; \
     ldconfig
 
 # ------------------------------------------------
-# 3) Select toolchain:
-#    - CC/CXX: newest GCC available (>=9 required by LibTorch headers)
-#    - FC: system gfortran (MUST match OpenMPI mpi.mod)
+# 5) NetCDF-C
 # ------------------------------------------------
 RUN set -euo pipefail; \
-    if command -v gcc-12 >/dev/null 2>&1; then \
-      echo "export CC=gcc-12" > /etc/profile.d/toolchain.sh; \
-      echo "export CXX=g++-12" >> /etc/profile.d/toolchain.sh; \
-    elif command -v gcc-11 >/dev/null 2>&1; then \
-      echo "export CC=gcc-11" > /etc/profile.d/toolchain.sh; \
-      echo "export CXX=g++-11" >> /etc/profile.d/toolchain.sh; \
-    elif command -v gcc-10 >/dev/null 2>&1; then \
-      echo "export CC=gcc-10" > /etc/profile.d/toolchain.sh; \
-      echo "export CXX=g++-10" >> /etc/profile.d/toolchain.sh; \
-    else \
-      echo "export CC=gcc" > /etc/profile.d/toolchain.sh; \
-      echo "export CXX=g++" >> /etc/profile.d/toolchain.sh; \
-    fi; \
-    echo "export FC=gfortran" >> /etc/profile.d/toolchain.sh; \
-    chmod +x /etc/profile.d/toolchain.sh; \
-    source /etc/profile.d/toolchain.sh; \
-    echo "Selected toolchain:"; \
-    echo "CC=$CC  -> $($CC --version | head -1)"; \
-    echo "CXX=$CXX -> $($CXX --version | head -1)"; \
-    echo "FC=$FC  -> $($FC --version | head -1)"; \
-    MAJOR=$($CC -dumpversion | cut -d. -f1); \
-    if [ "${MAJOR}" -lt 9 ]; then \
-      echo "ERROR: C/C++ compiler must be GCC>=9 for LibTorch, got $($CC -dumpversion)"; exit 1; \
-    fi
-
-# ------------------------------------------------
-# 4) Force OpenMPI wrappers to use SAME compilers (GLOBAL)
-# ------------------------------------------------
-RUN set -euo pipefail; \
-    source /etc/profile.d/toolchain.sh; \
-    echo "export OMPI_CC=${CC}"  >  /etc/profile.d/ompi_compilers.sh; \
-    echo "export OMPI_CXX=${CXX}" >> /etc/profile.d/ompi_compilers.sh; \
-    echo "export OMPI_FC=${FC}"  >> /etc/profile.d/ompi_compilers.sh; \
-    chmod +x /etc/profile.d/ompi_compilers.sh
-
-ENV OMPI_CC=${CC} \
-    OMPI_CXX=${CXX} \
-    OMPI_FC=${FC}
-
-# ------------------------------------------------
-# 5) Verify MPI wrappers are functional + runtime link works (no heredoc)
-# ------------------------------------------------
-RUN set -euo pipefail; \
-    source /etc/profile.d/toolchain.sh; \
-    source /etc/profile.d/ompi_compilers.sh; \
-    echo "=== MPI wrapper sanity ==="; \
-    echo "mpicc  : $(command -v mpicc  || echo NOTFOUND)"; \
-    echo "mpifort: $(command -v mpifort|| echo NOTFOUND)"; \
-    echo "mpif90 : $(command -v mpif90 || echo NOTFOUND)"; \
-    if command -v mpifort >/dev/null 2>&1; then MPI_FC=mpifort; else MPI_FC=mpif90; fi; \
-    echo "Using MPI Fortran wrapper: ${MPI_FC}"; \
-    (${MPI_FC} --showme:command || ${MPI_FC} -show || true) | head -n 2; \
-    (mpicc --showme:command || mpicc -show || true) | head -n 2; \
-    echo "=== Looking for mpi.mod ==="; \
-    find /usr -name "mpi.mod" -print | head -n 5 || true; \
-    echo "=== MPI runtime smoke test ==="; \
     cd /tmp; \
-    echo '#include <stdio.h>' > t.c; \
-    echo 'int main(){ puts("MPI-smoke-hello"); return 0; }' >> t.c; \
-    mpicc t.c -o t.exe; \
-    echo "--- ldd(t.exe) ---"; \
-    ldd ./t.exe | egrep -i "(mpi|not found)" || true; \
-    echo "--- run(t.exe) ---"; \
-    ./t.exe
+    curl -L -o netcdf-c.tar.gz "https://github.com/Unidata/netcdf-c/archive/refs/tags/v${NETCDF_C_VER}.tar.gz"; \
+    tar xzf netcdf-c.tar.gz; \
+    cd "netcdf-c-${NETCDF_C_VER}"; \
+    export CPPFLAGS="-I${HDF5_PREFIX}/include"; \
+    export LDFLAGS="-L${HDF5_PREFIX}/lib"; \
+    export LD_LIBRARY_PATH="${HDF5_PREFIX}/lib:${LD_LIBRARY_PATH:-}"; \
+    ./configure \
+      --prefix="${NETCDF_PREFIX}" \
+      --enable-shared --disable-static \
+      --enable-netcdf-4; \
+    make -j "${NETCDF_JOBS}"; \
+    make install; \
+    cd /; \
+    rm -rf "/tmp/netcdf-c-${NETCDF_C_VER}" /tmp/netcdf-c.tar.gz; \
+    echo "${NETCDF_PREFIX}/lib" > /etc/ld.so.conf.d/zz-netcdf.conf; \
+    ldconfig
 
 # ------------------------------------------------
-# 6) Build + install PNetCDF from source (provides ext_pnc_* symbols)
+# 6) NetCDF-Fortran
 # ------------------------------------------------
-ENV PNETCDF=${PNETCDF_PREFIX}
 RUN set -euo pipefail; \
-    source /etc/profile.d/toolchain.sh; \
-    source /etc/profile.d/ompi_compilers.sh; \
-    echo "=== Build PNetCDF ==="; \
     cd /tmp; \
-    curl -L -o pnetcdf.tar.gz https://parallel-netcdf.github.io/Release/pnetcdf-1.12.3.tar.gz; \
+    curl -L -o netcdf-fortran.tar.gz "https://github.com/Unidata/netcdf-fortran/archive/refs/tags/v${NETCDF_FORTRAN_VER}.tar.gz"; \
+    tar xzf netcdf-fortran.tar.gz; \
+    cd "netcdf-fortran-${NETCDF_FORTRAN_VER}"; \
+    export CPPFLAGS="-I${NETCDF_PREFIX}/include -I${HDF5_PREFIX}/include"; \
+    export LDFLAGS="-L${NETCDF_PREFIX}/lib -L${HDF5_PREFIX}/lib"; \
+    export LIBS="-lnetcdf -lhdf5_hl -lhdf5 -lz -ldl -lm"; \
+    export LD_LIBRARY_PATH="${NETCDF_PREFIX}/lib:${HDF5_PREFIX}/lib:${LD_LIBRARY_PATH:-}"; \
+    ./configure \
+      --prefix="${NETCDF_PREFIX}" \
+      --enable-shared --disable-static; \
+    make -j "${NETCDF_JOBS}"; \
+    make install; \
+    cd /; \
+    rm -rf "/tmp/netcdf-fortran-${NETCDF_FORTRAN_VER}" /tmp/netcdf-fortran.tar.gz; \
+    ldconfig
+
+ENV NETCDF="${NETCDF_PREFIX}" \
+    HDF5="${HDF5_PREFIX}" \
+    LD_LIBRARY_PATH="${NETCDF_PREFIX}/lib:${HDF5_PREFIX}/lib:${LD_LIBRARY_PATH:-}" \
+    CPATH="${NETCDF_PREFIX}/include:${HDF5_PREFIX}/include:${CPATH:-}" \
+    LIBRARY_PATH="${NETCDF_PREFIX}/lib:${HDF5_PREFIX}/lib:${LIBRARY_PATH:-}"
+
+# ------------------------------------------------
+# 7) PNetCDF
+# ------------------------------------------------
+RUN set -euo pipefail; \
+    cd /tmp; \
+    curl -L -o pnetcdf.tar.gz "https://parallel-netcdf.github.io/Release/pnetcdf-${PNETCDF_VER}.tar.gz"; \
     tar xzf pnetcdf.tar.gz; \
-    cd pnetcdf-1.12.3; \
-    ./configure --prefix="${PNETCDF_PREFIX}" CC=mpicc FC=mpifort CXX=mpicxx; \
+    cd "pnetcdf-${PNETCDF_VER}"; \
+    ./configure \
+      --prefix="${PNETCDF_PREFIX}" \
+      CC=mpicc FC=mpifort CXX=mpicxx \
+      --enable-shared --disable-static; \
     make -j "${PNETCDF_JOBS}"; \
     make install; \
     cd /; \
-    rm -rf /tmp/pnetcdf-1.12.3 /tmp/pnetcdf.tar.gz; \
-    echo "=== PNetCDF installed ==="; \
-    find "${PNETCDF_PREFIX}" -maxdepth 2 -type f \( -name "libpnetcdf.so*" -o -name "libpnetcdf.a" \) -print
+    rm -rf "/tmp/pnetcdf-${PNETCDF_VER}" /tmp/pnetcdf.tar.gz; \
+    echo "${PNETCDF_PREFIX}/lib" > /etc/ld.so.conf.d/zz-pnetcdf.conf; \
+    ldconfig
 
-ENV LD_LIBRARY_PATH="${PNETCDF_PREFIX}/lib:${PNETCDF_PREFIX}/lib64:${LD_LIBRARY_PATH}" \
-    LIBRARY_PATH="${PNETCDF_PREFIX}/lib:${PNETCDF_PREFIX}/lib64:${LIBRARY_PATH:-}" \
-    CPATH="${PNETCDF_PREFIX}/include:${CPATH:-}"
+ENV PNETCDF="${PNETCDF_PREFIX}" \
+    LD_LIBRARY_PATH="${PNETCDF_PREFIX}/lib:${LD_LIBRARY_PATH:-}" \
+    CPATH="${PNETCDF_PREFIX}/include:${CPATH:-}" \
+    LIBRARY_PATH="${PNETCDF_PREFIX}/lib:${LIBRARY_PATH:-}"
 
 # ------------------------------------------------
-# 7) Unpack LibTorch CPU ZIP (from docker-deps/)
+# 8) LibTorch + FTorch
 # ------------------------------------------------
 COPY docker-deps/libtorch-cxx11-abi-shared-with-deps-2.6.0+cpu.zip /tmp/libtorch.zip
 RUN set -euo pipefail; \
     unzip -q /tmp/libtorch.zip -d /opt; \
     rm /tmp/libtorch.zip; \
-    test -d "${TORCH_ROOT}/include" || { echo "ERROR: missing ${TORCH_ROOT}/include"; exit 1; }; \
-    test -d "${TORCH_ROOT}/lib"     || { echo "ERROR: missing ${TORCH_ROOT}/lib"; exit 1; }; \
-    ls -lh "${TORCH_ROOT}/lib/libtorch_cpu.so"* || true; \
-    find "${TORCH_ROOT}" -maxdepth 5 -name TorchConfig.cmake -print | head -n 5
+    test -d "${TORCH_ROOT}/include" && test -d "${TORCH_ROOT}/lib"
 
-# ------------------------------------------------
-# 8) Build FTorch from source (C++ uses new GCC, Fortran uses system gfortran)
-# ------------------------------------------------
 COPY docker-deps/FTorch/ /tmp/FTorch/
 RUN set -euo pipefail; \
-    source /etc/profile.d/toolchain.sh; \
-    source /etc/profile.d/ompi_compilers.sh; \
-    echo "=== Build FTorch ==="; \
-    echo "CC=$CC  -> $($CC --version | head -1)"; \
-    echo "FC=$FC  -> $($FC --version | head -1)"; \
-    rm -rf /tmp/FTorch_build; mkdir -p /tmp/FTorch_build; \
+    rm -rf /tmp/FTorch_build; \
+    mkdir -p /tmp/FTorch_build; \
     cmake -S /tmp/FTorch -B /tmp/FTorch_build \
       -DCMAKE_BUILD_TYPE=Release \
       -DCMAKE_INSTALL_PREFIX="${FTORCH_INSTALL}" \
       -DCMAKE_PREFIX_PATH="${TORCH_ROOT}" \
-      -DCMAKE_C_COMPILER="${CC}" \
-      -DCMAKE_CXX_COMPILER="${CXX}" \
-      -DCMAKE_Fortran_COMPILER="${FC}" \
+      -DCMAKE_C_COMPILER=gcc \
+      -DCMAKE_CXX_COMPILER=g++ \
+      -DCMAKE_Fortran_COMPILER=gfortran \
+      -DCMAKE_INSTALL_RPATH="${FTORCH_INSTALL}/lib64;${TORCH_ROOT}/lib" \
       -DFTORCH_BUILD_TESTS=OFF; \
     cmake --build /tmp/FTorch_build -- -j "${FTORCH_JOBS}"; \
     cmake --install /tmp/FTorch_build; \
     rm -rf /tmp/FTorch /tmp/FTorch_build; \
-    test -f "${FTORCH_INSTALL}/include/ftorch/ftorch.mod" || \
-      { echo "ERROR: ftorch.mod not found under ${FTORCH_INSTALL}/include/ftorch"; \
-        find ${FTORCH_INSTALL}/include -maxdepth 4 -type f -name "*.mod" -print; exit 1; }
+    test -f "${FTORCH_INSTALL}/include/ftorch/ftorch.mod"
 
-# ------------------------------------------------
-# 9) Export FTorch/LibTorch paths for build + runtime
-# ------------------------------------------------
 ENV FTORCH_MOD="${FTORCH_INSTALL}/include/ftorch" \
     FTORCH_LIB="${FTORCH_INSTALL}/lib64" \
-    LIBTORCH_LIB="${TORCH_ROOT}/lib"
-
-ENV LD_LIBRARY_PATH="${FTORCH_LIB}:${LIBTORCH_LIB}:${LD_LIBRARY_PATH}" \
-    LIBRARY_PATH="${FTORCH_LIB}:${LIBTORCH_LIB}:${LIBRARY_PATH:-}" \
-    CPATH="${FTORCH_MOD}:${TORCH_ROOT}/include:${CPATH:-}"
+    LIBTORCH_LIB="${TORCH_ROOT}/lib" \
+    LD_LIBRARY_PATH="${FTORCH_INSTALL}/lib64:${TORCH_ROOT}/lib:${LD_LIBRARY_PATH:-}" \
+    CPATH="${FTORCH_INSTALL}/include/ftorch:${TORCH_ROOT}/include:${CPATH:-}" \
+    LIBRARY_PATH="${FTORCH_INSTALL}/lib64:${TORCH_ROOT}/lib:${LIBRARY_PATH:-}"
 
 # ------------------------------------------------
-# 10) WRF-Chem compile-time flags
+# 9) WRF flags + source tree
 # ------------------------------------------------
 ENV WRF_CHEM=1 \
     WRF_EM_CORE=1 \
     NETCDF_classic=1 \
     WRFIO_NCD_LARGE_FILE_SUPPORT=1 \
-    USE_NETCDF4_FEATURES=0
+    USE_NETCDF4_FEATURES=0 \
+    PNETCDF_QUILT=0
 
-ENV PNETCDF_QUILT=0
-
-# ------------------------------------------------
-# 11) Copy WRF source tree
-# ------------------------------------------------
 WORKDIR /container/WRF
 COPY . /container/WRF/
+
 RUN mkdir -p /opt/ml_models
 COPY docker-deps/ml-models/mlp_wrapper.pt /opt/ml_models/mlp_wrapper.pt
+RUN chmod -R a+rX /opt/ml_models
 
+# Remove host-built leftovers
 RUN set -euo pipefail; \
-    echo "=== Purge any prebuilt artifacts in WRF tree ==="; \
     find /container/WRF -type f \( -name "*.mod" -o -name "*.o" -o -name "*.a" \) -delete || true
 
 # ------------------------------------------------
-# 12) Configure WRF non-interactively (Option 34)
+# 10) Patch external/io_int
 # ------------------------------------------------
 RUN set -euo pipefail; \
-    source /etc/profile.d/toolchain.sh; \
-    source /etc/profile.d/ompi_compilers.sh; \
-    echo "=== Configure env ==="; \
-    echo "PNETCDF=${PNETCDF}"; \
-    echo "CC=$CC  FC=$FC"; \
+    MK=/container/WRF/external/io_int/makefile; \
+    test -f "$MK"; \
+    if grep -qE '^AR[[:space:]]*=' "$MK"; then \
+      sed -i -E 's|^AR[[:space:]]*=.*|AR = ar|' "$MK"; \
+    else \
+      echo 'AR = ar' >> "$MK"; \
+    fi; \
+    if grep -qE '^RANLIB[[:space:]]*=' "$MK"; then \
+      sed -i -E 's|^RANLIB[[:space:]]*=.*|RANLIB = ranlib|' "$MK"; \
+    else \
+      echo 'RANLIB = ranlib' >> "$MK"; \
+    fi; \
+    for v in FFLAGS F90FLAGS F77FLAGS; do \
+      if grep -qE "^${v}[[:space:]]*=" "$MK"; then \
+        sed -i -E "s|^(${v}[[:space:]]*=.*)|\\1 -I${MPICH_PREFIX}/include|" "$MK"; \
+      fi; \
+    done
+
+# ------------------------------------------------
+# 11) Configure WRF non-interactively
+# ------------------------------------------------
+RUN set -euo pipefail; \
     ./clean -a 2>/dev/null || true; \
     printf '%s\n%s\n' "${WRF_CONFIGURE_OPTION}" "1" | ./configure 2>&1 | tee /tmp/configure.log; \
     test -f configure.wrf
 
 # ------------------------------------------------
-# 13) Patch configure.wrf:
-#     (A) Force SERIAL compilers to match FC/CC
-#     (B) Add FTorch include path (append; do NOT clobber flags)
-#     (C) Add FTorch/LibTorch link flags into LIB_LOCAL
-#     (D) Ensure PNetCDF link path exists
+# 12) Patch configure.wrf
 # ------------------------------------------------
 RUN set -euo pipefail; \
-    source /etc/profile.d/toolchain.sh; \
-    source /etc/profile.d/ompi_compilers.sh; \
+    source /etc/profile.d/tirpc.sh || true; \
+    TIRPC_INC="${TIRPC_INC:-/usr/include/tirpc}"; \
+    echo "Using TIRPC_INC=${TIRPC_INC}"; \
     CFG=/container/WRF/configure.wrf; \
     \
-    echo "=== configure.wrf BEFORE patch (compiler lines) ==="; \
-    egrep '^(SFC|SCC|CCOMP|DM_FC|DM_CC)[[:space:]]*=' -n "$CFG" || true; \
+    sed -i "s|^SFC[[:space:]]*=.*|SFC             =       gfortran|"   "$CFG"; \
+    sed -i "s|^SCC[[:space:]]*=.*|SCC             =       gcc|"        "$CFG"; \
+    sed -i "s|^CCOMP[[:space:]]*=.*|CCOMP           =       gcc|"      "$CFG"; \
+    sed -i "s|^DM_FC[[:space:]]*=.*|DM_FC           =       mpifort|"  "$CFG" || true; \
+    sed -i "s|^DM_F90[[:space:]]*=.*|DM_F90          =       mpifort|" "$CFG" || true; \
+    sed -i "s|^DM_CC[[:space:]]*=.*|DM_CC           =       mpicc|"    "$CFG" || true; \
     \
-    sed -i "s|^SFC[[:space:]]*=.*|SFC             =       ${FC}|"   "$CFG"; \
-    sed -i "s|^SCC[[:space:]]*=.*|SCC             =       ${CC}|"   "$CFG"; \
-    sed -i "s|^CCOMP[[:space:]]*=.*|CCOMP           =       ${CC}|" "$CFG"; \
+    if grep -qE '^AR[[:space:]]*=' "$CFG"; then \
+      sed -i -E 's|^AR[[:space:]]*=.*|AR              =       ar|' "$CFG"; \
+    else \
+      echo 'AR              =       ar' >> "$CFG"; \
+    fi; \
+    if grep -qE '^RANLIB[[:space:]]*=' "$CFG"; then \
+      sed -i -E 's|^RANLIB[[:space:]]*=.*|RANLIB          =       ranlib|' "$CFG"; \
+    else \
+      echo 'RANLIB          =       ranlib' >> "$CFG"; \
+    fi; \
     \
-    # Append include path safely
-    sed -i -E "s|^(FCFLAGS[[:space:]]*=.*)|\\1 -I${FTORCH_MOD}|" "$CFG"; \
-    sed -i -E "s|^(FFLAGS[[:space:]]*=.*)|\\1 -I${FTORCH_MOD}|"  "$CFG"; \
+    EXTRA_INCS="-I${MPICH_PREFIX}/include -I${FTORCH_MOD} -I${TIRPC_INC}"; \
+    for v in FCBASEOPTS FCFLAGS FFLAGS F77FLAGS F90FLAGS; do \
+      if grep -qE "^${v}[[:space:]]*=" "$CFG"; then \
+        sed -i -E "s|^(${v}[[:space:]]*=.*)|\\1 ${EXTRA_INCS}|" "$CFG"; \
+      fi; \
+    done; \
     \
-    # Prepend library variables and override LIB_LOCAL
-    { \
-      printf 'FTORCH_LIB   := %s\n' "${FTORCH_LIB}"; \
-      printf 'LIBTORCH_LIB := %s\n' "${LIBTORCH_LIB}"; \
-      printf 'PNETCDF_LIB  := %s\n' "${PNETCDF_PREFIX}/lib"; \
-      printf '# ---- FTorch + libtorch ----\n'; \
-      printf 'LIB_FTORCH = \\\n'; \
-      printf '  -L$(FTORCH_LIB) -lftorch \\\n'; \
-      printf '  -L$(LIBTORCH_LIB) -Wl,-rpath,$(LIBTORCH_LIB):$(FTORCH_LIB) \\\n'; \
-      printf '  -ltorch_cpu -lc10 -lstdc++ -ldl -lpthread\n'; \
-      printf '# ---- PNetCDF (for quilt ext_pnc_*) ----\n'; \
-      printf 'LIB_PNETCDF = \\\n'; \
-      printf '  -L$(PNETCDF_LIB) -lpnetcdf\n'; \
-      printf '# Hook into WRF link variable\n'; \
-      printf 'LIB_LOCAL = $(LIB_FTORCH) $(LIB_PNETCDF)\n\n'; \
-      cat "$CFG"; \
-    } > /tmp/cfg_patched && mv /tmp/cfg_patched "$CFG"; \
+    if grep -qE '^CC_CPPFLAGS[[:space:]]*=' "$CFG"; then \
+      sed -i -E "s|^(CC_CPPFLAGS[[:space:]]*=.*)|\\1 -I${MPICH_PREFIX}/include -I${TIRPC_INC}|" "$CFG"; \
+    fi; \
     \
-    echo "=== configure.wrf AFTER patch (compiler lines) ==="; \
-    egrep '^(SFC|SCC|CCOMP|DM_FC|DM_CC)[[:space:]]*=' -n "$CFG" || true
+    awk \
+      -v ftlib="${FTORCH_INSTALL}/lib64" \
+      -v tlib="${TORCH_ROOT}/lib" \
+      -v pnlib="${PNETCDF_PREFIX}/lib" \
+      -v nclib="${NETCDF_PREFIX}/lib" \
+      -v h5lib="${HDF5_PREFIX}/lib" \
+    ' \
+      NR==1 {print; \
+        print "FTORCH_LIB   := " ftlib; \
+        print "LIBTORCH_LIB := " tlib; \
+        print "PNETCDF_LIB  := " pnlib; \
+        print "NETCDF_LIB   := " nclib; \
+        print "HDF5_LIB     := " h5lib; \
+        print "EXTRA_LIBS = \\"; \
+        print "  -L$(FTORCH_LIB) -lftorch \\"; \
+        print "  -L$(LIBTORCH_LIB) -ltorch_cpu -lc10 -lstdc++ -ldl -lpthread \\"; \
+        print "  -L$(PNETCDF_LIB) -lpnetcdf \\"; \
+        print "  -L$(NETCDF_LIB) -lnetcdff -lnetcdf \\"; \
+        print "  -L$(HDF5_LIB) -lhdf5_fortran -lhdf5hl_fortran -lhdf5_hl -lhdf5 -lz -ldl -lm \\"; \
+        print "  -Wl,-rpath,$(LIBTORCH_LIB) \\"; \
+        print "  -Wl,-rpath,$(FTORCH_LIB) \\"; \
+        print "  -Wl,-rpath,$(PNETCDF_LIB) \\"; \
+        print "  -Wl,-rpath,$(NETCDF_LIB) \\"; \
+        print "  -Wl,-rpath,$(HDF5_LIB)"; \
+        next } \
+      {print} \
+    ' "$CFG" > /tmp/cfg_patched && mv /tmp/cfg_patched "$CFG"; \
+    \
+    if grep -qE '^LIB_LOCAL[[:space:]]*=' "$CFG"; then \
+      sed -i -E 's|^(LIB_LOCAL[[:space:]]*=.*)|\1 $(EXTRA_LIBS)|' "$CFG"; \
+    else \
+      echo 'LIB_LOCAL = $(EXTRA_LIBS)' >> "$CFG"; \
+    fi; \
+    \
+    echo "=== configure.wrf compiler lines ==="; \
+    grep -E '^(SFC|SCC|CCOMP|DM_FC|DM_CC|DM_F90)[[:space:]]*=' "$CFG" || true; \
+    echo "=== EXTRA_LIBS block ==="; \
+    grep -A 20 '^EXTRA_LIBS' "$CFG" || true
 
 # ------------------------------------------------
-# 14) Compile WRF-Chem
+# 13) Compile WRF-Chem
 # ------------------------------------------------
 RUN set -euo pipefail; \
-    source /etc/profile.d/toolchain.sh; \
-    source /etc/profile.d/ompi_compilers.sh; \
-    echo "=== Final compiler consistency check ==="; \
-    echo "CC=$CC  -> $($CC --version | head -1)"; \
-    echo "FC=$FC  -> $($FC --version | head -1)"; \
-    echo "OMPI_FC=$OMPI_FC"; \
-    (mpifort --showme:command || mpifort -show || true) | head -n 2; \
-    echo "PNETCDF=$PNETCDF"; \
-    ls -lh "${PNETCDF_PREFIX}/lib/libpnetcdf"* 2>/dev/null || true; \
     ./compile -j "${WRF_JOBS}" em_real 2>&1 | tee /tmp/compile_wrf.log; \
-    if ! test -f main/wrf.exe; then \
-      echo "=== Link/compile errors (tail) ==="; \
-      grep -iE "(undefined reference|cannot find -l|ld returned|Fatal Error:|fatal error|Error:)" /tmp/compile_wrf.log | tail -200 || true; \
-      echo "=== Last 120 lines ==="; \
-      tail -120 /tmp/compile_wrf.log; \
-      exit 1; \
-    fi; \
-    test -f main/real.exe || { echo "ERROR: real.exe not built"; exit 1; }
+    test -f main/wrf.exe; \
+    test -f main/real.exe; \
+    echo "=== linked MPI after build ==="; \
+    ldd main/wrf.exe | grep -i mpi || true; \
+    echo "=== rpath/runpath after build ==="; \
+    readelf -d main/wrf.exe | grep -E 'RPATH|RUNPATH' || true
 
-    
+# ------------------------------------------------
+# 14) Strip /opt/mpich from RUNPATH
+# ------------------------------------------------
+RUN set -euo pipefail; \
+    echo "=== RUNPATH before patchelf ==="; \
+    readelf -d main/wrf.exe | grep -E 'RPATH|RUNPATH' || echo "none"; \
+    \
+    for exe in main/wrf.exe main/real.exe main/ndown.exe main/tc.exe; do \
+      test -f "$exe" || continue; \
+      echo "Patching $exe ..."; \
+      OLD_RPATH="$(patchelf --print-rpath "$exe" 2>/dev/null || true)"; \
+      echo "  old rpath: ${OLD_RPATH}"; \
+      NEW_RPATH="$(echo "${OLD_RPATH}" | tr ':' '\n' | NEW_RPATH="$(echo "${OLD_RPATH}" | tr ':' '\n' | grep -v "^${MPICH_PREFIX}" | paste -sd ':' - || true)" | paste -sd ':' - || true)"; \
+      echo "  new rpath: ${NEW_RPATH}"; \
+      if [ -n "${NEW_RPATH}" ]; then \
+        patchelf --set-rpath "${NEW_RPATH}" "$exe"; \
+      else \
+        patchelf --remove-rpath "$exe"; \
+      fi; \
+    done; \
+    \
+    echo "=== RUNPATH after patchelf ==="; \
+    readelf -d main/wrf.exe | grep -E 'RPATH|RUNPATH' || echo "No RPATH/RUNPATH"; \
+    echo "=== ldd after patchelf ==="; \
+    ldd main/wrf.exe | grep -i mpi || true
+
+# ------------------------------------------------
+# 15) Shifter permissions fix
+# ------------------------------------------------
+RUN set -euo pipefail; \
+    chmod -R a+rX /container/WRF; \
+    find /container/WRF -type f -name "*.exe" -exec chmod a+rx {} \;
+
 WORKDIR /container/WRF/run
 CMD ["/bin/bash"]
