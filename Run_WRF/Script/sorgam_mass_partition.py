@@ -576,7 +576,7 @@ if __name__ == "__main__":
     #
     # Known from observation / ML emulator:
     #   - Total sulfate mass mixing ratio:  4.5e-10  kg/kg  (MERRA-2)
-    #   - Total CCN number concentration:   50       cm^-3  (ARM)
+    #   - Total CCN number concentration:   200       cm^-3  (ARM)
     #   - Activation fraction (nuclei):     0.43     (ML emulator)
     #   - Activation fraction (accum):      0.64     (ML emulator)
     #
@@ -591,14 +591,14 @@ if __name__ == "__main__":
     sigma_acc = SGINIA_DEFAULT   # 2.00
 
     # --- Observations ---
-    q_total   = 4.5e-10          # total sulfate mass mixing ratio [kg/kg]
-    CCN_total = 50.0             # total CCN [# cm^-3]
+    q_total   = 9.0e-10          # total sulfate mass mixing ratio [kg/kg]
+    CCN_total = 200.0             # total CCN [# cm^-3]
     f_act_nuc = 0.43             # activation fraction, nuclei mode
     f_act_acc = 0.64             # activation fraction, accumulation mode
 
     # --- Assumed number fractions (2-mode, no coarse) ---
-    f_num_nuc = 0.80             # 80% of particles by NUMBER in nuclei
-    f_num_acc = 0.20             # 20% in accumulation
+    f_num_nuc = 0.67             # 80% of particles by NUMBER in nuclei
+    f_num_acc = 0.33             # 20% in accumulation
 
     print(f"  Diameters: nuc={dg_nuc*1e6:.2f} um, acc={dg_acc*1e6:.2f} um")
     print(f"  Sigma:     nuc={sigma_nuc}, acc={sigma_acc}")
@@ -615,7 +615,7 @@ if __name__ == "__main__":
 
     # --- Print results (2-mode only) ---
     print("=" * 70)
-    print("  MERRA-2/ARM 2-mode: q=4.5e-10 kg/kg, CCN=50 cm-3")
+    print("  MERRA-2/ARM 2-mode: q=4.5e-10 kg/kg, CCN=200 cm-3")
     print("  f_act=0.43/0.64 (nuc/acc), dg=0.04/0.16 um")
     print("=" * 70)
 
@@ -670,8 +670,8 @@ if __name__ == "__main__":
         (0.95, 0.05),
         (0.90, 0.10),
         (0.85, 0.15),
-        (0.80, 0.20),   # default
-        (0.70, 0.30),
+        (0.80, 0.20),
+        (0.70, 0.30),   # default
         (0.50, 0.50),
     ]
 
@@ -683,7 +683,7 @@ if __name__ == "__main__":
             f_act_nuc, f_act_acc, 1.0,
             CCN_total, q_total,
         )
-        marker = " <-- default" if fn == 0.80 else ""
+        marker = " <-- default" if fn == 0.70 else ""
         print(f"  {fn:6.2f} {fa:6.2f} | {r['N_total_cm3']:8.2f} |"
               f" {r['frac_nuc']:10.6f} {r['frac_acc']:10.6f} |"
               f" {r['q_nuc']:14.4e} {r['q_acc']:14.4e}{marker}")
