@@ -76,7 +76,10 @@ so4aj_boxes = nt_boxes * fac_acc   # kg/kg
 so4ai_boxes = nt_boxes * fac_nuc   # kg/kg
 
 # ── Plotting ──────────────────────────────────────────────────────────────────
-fig, ax = plt.subplots(figsize=(16, 6))
+fig, (ax, ax2) = plt.subplots(
+    2, 1, figsize=(16, 8),
+    gridspec_kw={"height_ratios": [3, 1]},
+)
 
 n       = len(dates)
 x       = np.arange(n)
@@ -154,10 +157,32 @@ ax.text(0.01, 0.03, formula_text, transform=ax.transAxes,
         bbox=dict(boxstyle="round,pad=0.4", facecolor="lightyellow",
                   edgecolor="gray", alpha=0.85))
 
+# ── Bottom panel: stacked bar – mass fraction between so4aj and so4ai ─────────
+saj_med = so4aj_boxes[:, 2]          # median so4aj per date
+sai_med = so4ai_boxes[:, 2]          # median so4ai per date
+total   = saj_med + sai_med
+
+frac_aj = saj_med / total            # acc fraction
+frac_ai = sai_med / total            # ait fraction
+
+bar_kw = dict(width=0.55, edgecolor="black", linewidth=0.7)
+ax2.bar(x, frac_aj, color="#1565C0", alpha=0.65, label="so4aj (acc)", **bar_kw)
+ax2.bar(x, frac_ai, bottom=frac_aj,  color="#C62828", alpha=0.65, label="so4ai (ait)", **bar_kw)
+
+ax2.set_xlim(-0.7, n - 0.3)
+ax2.set_xticks(x)
+ax2.set_xticklabels(dates, rotation=30, ha="right", fontsize=10)
+ax2.set_yticks([0, 0.5, 1.0])
+ax2.set_yticklabels(["0", "0.5", "1"], fontsize=9)
+ax2.set_ylabel("Mass\nfraction", fontsize=9)
+ax2.set_ylim(0, 1)
+ax2.grid(True, axis="y", alpha=0.3, linestyle="--")
+ax2.legend(loc="upper right", fontsize=8, ncol=2)
+
 plt.tight_layout()
-out_path = "so4a_boxplot.png"
+out_path = "Run_WRF/Script/so4a_boxplot.png"
 plt.savefig(out_path, dpi=150, bbox_inches="tight")
-print(f"\nFigure saved → {out_path}")
+print(f"Figure saved → {out_path}")
 plt.show()
 
 # ── Print summary table ───────────────────────────────────────────────────────
