@@ -163,7 +163,7 @@
  conv_tr_wetscav                     = 0,      0,
  biomass_burn_opt                    = 0,      0,
  plumerisefire_frq                   = 30,     30,
- have_bcs_chem                       = .false., .false.,
+ have_bcs_chem                       = .true., .true.,
  have_bcs_tracer                     = .false., .false.,
  wetscav_onoff                       = 1,      1,
  cldchem_onoff                       = 1,      1,
