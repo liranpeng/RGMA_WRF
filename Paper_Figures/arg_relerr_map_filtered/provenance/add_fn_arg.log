@@ -1,0 +1,16 @@
+=== 20170714_1aer_org: 87 wrfout files from parcel_cmp_3368245.out
+    pool before subsample: 4,558,128
+    row alignment verified: FN11/FN21 identical to stored fn_wrf (1,500,000 rows)
+    wrote /scratch/07088/tg863871/Perlm_Backup/WRF_stam3_ml_mixout_bce_lr1e-4_cosine_more_fix/test/20170714_1aer_org/online/parcel_inputs.npz  (+fn_arg[1,500,000,2], mean ARG Aitken=0.0050 Accum=0.1423)
+=== 20170714_1aer_mid: 43 wrfout files from parcel_cmp_3368247.out
+    pool before subsample: 10,845,781
+    row alignment verified: FN11/FN21 identical to stored fn_wrf (1,500,000 rows)
+    wrote /scratch/07088/tg863871/Perlm_Backup/WRF_stam3_ml_mixout_bce_lr1e-4_cosine_more_fix/test/20170714_1aer_mid/online/parcel_inputs.npz  (+fn_arg[1,500,000,2], mean ARG Aitken=0.0140 Accum=0.1671)
+=== 20170714_3aer_org: 76 wrfout files from parcel_cmp_3368246.out
+    pool before subsample: 4,023,228
+    row alignment verified: FN11/FN21 identical to stored fn_wrf (1,500,000 rows)
+    wrote /scratch/07088/tg863871/Perlm_Backup/WRF_stam3_ml_mixout_bce_lr1e-4_cosine_more_fix/test/20170714_3aer_org/online/parcel_inputs.npz  (+fn_arg[1,500,000,2], mean ARG Aitken=0.0068 Accum=0.1091)
+=== 20170714_3aer_mid: 39 wrfout files from parcel_cmp_3368822.out
+    pool before subsample: 9,896,853
+    row alignment verified: FN11/FN21 identical to stored fn_wrf (1,500,000 rows)
+    wrote /scratch/07088/tg863871/Perlm_Backup/WRF_stam3_ml_mixout_bce_lr1e-4_cosine_more_fix/test/20170714_3aer_mid/online/parcel_inputs.npz  (+fn_arg[1,500,000,2], mean ARG Aitken=0.0195 Accum=0.1381)

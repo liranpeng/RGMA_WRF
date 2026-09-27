@@ -1,0 +1,91 @@
+=== phase reconstruct (20170714_3aer_mid)  Tue Aug  4 12:09:43 AM CDT 2026 ===
+======================================================================
+Reconstructing emulator inputs + applied FN from wrfout ...
+  wrfout_d01_2017-07-15_09:04:00: 269,581 updraft cells
+  wrfout_d01_2017-07-15_09:06:00: 265,977 updraft cells
+  wrfout_d01_2017-07-15_09:08:00: 261,533 updraft cells
+  wrfout_d01_2017-07-15_09:10:00: 259,170 updraft cells
+  wrfout_d01_2017-07-15_09:12:00: 258,767 updraft cells
+  wrfout_d01_2017-07-15_09:14:00: 258,092 updraft cells
+  wrfout_d01_2017-07-15_09:16:00: 257,722 updraft cells
+  wrfout_d01_2017-07-15_09:18:00: 256,874 updraft cells
+  wrfout_d01_2017-07-15_09:20:00: 255,405 updraft cells
+  wrfout_d01_2017-07-15_09:22:00: 254,164 updraft cells
+  wrfout_d01_2017-07-15_09:24:00: 252,949 updraft cells
+  wrfout_d01_2017-07-15_09:26:00: 252,117 updraft cells
+  wrfout_d01_2017-07-15_09:28:00: 252,273 updraft cells
+  wrfout_d01_2017-07-15_09:30:00: 253,136 updraft cells
+  wrfout_d01_2017-07-15_09:32:00: 253,969 updraft cells
+  wrfout_d01_2017-07-15_09:34:00: 254,772 updraft cells
+  wrfout_d01_2017-07-15_09:36:00: 254,120 updraft cells
+  wrfout_d01_2017-07-15_09:38:00: 253,798 updraft cells
+  wrfout_d01_2017-07-15_09:40:00: 254,291 updraft cells
+  wrfout_d01_2017-07-15_09:42:00: 254,298 updraft cells
+  wrfout_d01_2017-07-15_09:44:00: 254,943 updraft cells
+  wrfout_d01_2017-07-15_09:46:00: 254,690 updraft cells
+  wrfout_d01_2017-07-15_09:48:00: 252,744 updraft cells
+  wrfout_d01_2017-07-15_09:50:00: 251,962 updraft cells
+  wrfout_d01_2017-07-15_09:52:00: 250,534 updraft cells
+  wrfout_d01_2017-07-15_09:54:00: 249,217 updraft cells
+  wrfout_d01_2017-07-15_09:56:00: 249,494 updraft cells
+  wrfout_d01_2017-07-15_09:58:00: 248,508 updraft cells
+  wrfout_d01_2017-07-15_10:00:00: 249,223 updraft cells
+  wrfout_d01_2017-07-15_10:02:00: 250,502 updraft cells
+  wrfout_d01_2017-07-15_10:04:00: 250,566 updraft cells
+  wrfout_d01_2017-07-15_10:06:00: 250,418 updraft cells
+  wrfout_d01_2017-07-15_10:08:00: 250,254 updraft cells
+  wrfout_d01_2017-07-15_10:10:00: 249,848 updraft cells
+  wrfout_d01_2017-07-15_10:12:00: 250,358 updraft cells
+  wrfout_d01_2017-07-15_10:14:00: 251,107 updraft cells
+  wrfout_d01_2017-07-15_10:16:00: 250,919 updraft cells
+  wrfout_d01_2017-07-15_10:18:00: 249,594 updraft cells
+  wrfout_d01_2017-07-15_10:20:00: 248,964 updraft cells
+Subsampled to 1,500,000 cells (--max_cells)
+Total updraft cells: 1,500,000
+Wrote inputs -> /scratch/07088/tg863871/Perlm_Backup/WRF_stam3_ml_mixout_bce_lr1e-4_cosine_more_fix/test/20170714_3aer_mid/online/parcel_inputs.npz  (N=1,500,000)
+=== phase parcel (1 node, deadline=12000s)  Tue Aug  4 12:14:34 AM CDT 2026 ===
+[shard 0/1] 1,500,000 of 1,500,000 selected (1,500,000 total) cells on 48 workers (48 cores), deadline=12000s
+  parcel 2,500/1,500,000 (  0%)     2.8 samp/s  eta 9023.3 min
+  parcel 5,000/1,500,000 (  0%)     2.8 samp/s  eta 8997.4 min
+  parcel 7,500/1,500,000 (  0%)     2.8 samp/s  eta 8980.8 min
+  parcel 10,000/1,500,000 (  0%)     2.8 samp/s  eta 8963.9 min
+  parcel 12,500/1,500,000 (  0%)     2.8 samp/s  eta 8942.9 min
+  parcel 15,000/1,500,000 (  1%)     2.8 samp/s  eta 8935.7 min
+  parcel 17,500/1,500,000 (  1%)     2.8 samp/s  eta 8898.7 min
+  parcel 20,000/1,500,000 (  1%)     2.8 samp/s  eta 8905.2 min
+  parcel 22,500/1,500,000 (  1%)     2.8 samp/s  eta 8845.4 min
+  parcel 25,000/1,500,000 (  1%)     2.8 samp/s  eta 8831.7 min
+  parcel 27,500/1,500,000 (  1%)     2.8 samp/s  eta 8809.7 min
+  parcel 30,000/1,500,000 (  2%)     2.8 samp/s  eta 8772.0 min
+  parcel 32,500/1,500,000 (  2%)     2.8 samp/s  eta 8764.4 min
+  deadline 12000s reached after 33,452/1,500,000 cells -- stopping, keeping completed solves
+Parcel model stopped at deadline (12000s, 33,452 cells solved)
+[shard 0] wrote parcel_shard_0.npz
+=== phase merge  Tue Aug  4 03:34:36 AM CDT 2026 ===
+Merged 1 shards -> 33,452 solved cells (N=1,500,000)
+Pool cells: 1,500,000   attempted: 33,452 (2.2% of pool)   clean solves: 28,745 (85.9% of attempted)
+
+===== parcel vs wrfout emulator  (N=28,745) =====
+  [Aitken]  N=28,745
+     fn_parcel : mean=0.0274  median=0.0000  >0.99=0.000  <0.01=0.926
+     fn_wrf(ML): mean=0.0077  median=0.0000  >0.99=0.001  <0.01=0.974
+     ML-parcel : mean diff=-0.0197  MSE=0.0123  RMSE=0.1110  corr=+0.411
+     fraction parcel<0.5 but ML>0.99 (emulator over-activates): 0.001
+  [Accum]  N=28,745
+     fn_parcel : mean=0.1982  median=0.1246  >0.99=0.006  <0.01=0.026
+     fn_wrf(ML): mean=0.0960  median=0.0012  >0.99=0.002  <0.01=0.511
+     ML-parcel : mean diff=-0.1022  MSE=0.0541  RMSE=0.2325  corr=+0.500
+     fraction parcel<0.5 but ML>0.99 (emulator over-activates): 0.000
+
+Wrote scatter -> /scratch/07088/tg863871/Perlm_Backup/WRF_stam3_ml_mixout_bce_lr1e-4_cosine_more_fix/test/20170714_3aer_mid/online/parcel_vs_wrfout_20170714_3aer_mid_scatter.png
+Wrote scatter -> /scratch/07088/tg863871/Perlm_Backup/WRF_stam3_ml_mixout_bce_lr1e-4_cosine_more_fix/test/20170714_3aer_mid/online/parcel_vs_wrfout_20170714_3aer_mid_scatter.eps
+Wrote histogram -> /scratch/07088/tg863871/Perlm_Backup/WRF_stam3_ml_mixout_bce_lr1e-4_cosine_more_fix/test/20170714_3aer_mid/online/parcel_vs_wrfout_20170714_3aer_mid_hist.png
+Wrote histogram -> /scratch/07088/tg863871/Perlm_Backup/WRF_stam3_ml_mixout_bce_lr1e-4_cosine_more_fix/test/20170714_3aer_mid/online/parcel_vs_wrfout_20170714_3aer_mid_hist.eps
+
+======================================================================
+fn_parcel = ground-truth Fortran box model on the WRF states;
+fn_wrf    = ML emulator fraction WRF actually applied (FN11/FN21).
+Large ML>0.99 while parcel<0.5 => the deployed emulator over-activates
+on the real WRF distribution (the online saturation).
+======================================================================
+=== done  Tue Aug  4 03:34:41 AM CDT 2026 ===

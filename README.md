@@ -177,6 +177,46 @@ Each date folder contains **two subfolders**:
 
 ---
 
+# 📊 Paper Figures – ARG vs ML Aerosol Activation
+
+`Paper_Figures/` holds one self-contained bundle per figure of the ARG-vs-ML
+activation study (2017-07-14 cases, `1aer`/`3aer` × `org`/`mid`). Each bundle has
+its own `README.md`, the plotting script(s) unchanged from the producing run, a
+`run.sh` wrapper that picks the conda python, the inputs the script reads, an
+`original_figure/` reference copy, and a `provenance/` folder with the scripts
+and logs that generated the inputs.
+
+| Bundle | Figure | Inputs shipped |
+|--------|--------|----------------|
+| `arg_relerr_map_filtered/` | 2×4 map of the ARG scheme's median relative error in activated fraction vs. the Fortran parcel model, binned in (w, N_accum), (w, N_Aitken), (N_accum, N_Aitken), (w, p); v2/v3 variants split Aitken / accumulation. | per-case `online/*.npz` (**not in git**, see below) |
+| `parcel_vs_ARG_vs_ML_ALLCASES/` | 2×3 pooled hexbin: parcel-model truth vs. the ML fraction WRF applied (FN11/FN21) vs. the ARG fraction WRF computed (FN13/FN23). | per-case `online/*.npz` (**not in git**) |
+| `arg_vs_ml_consequences_rwp_v8/` | 5×2 time series 09:00–13:00 UTC 15 Jul 2017, ML-ACT solid vs ARG-ACT (WRF_dm_v2) dashed: N_acc, N_ait, CCN(0.05%), N_d, r_v, LWP, rain-water path, cloudy-column fraction. v12 variant included. | `*_series_CCN2.npz` domain-mean cache (in git) |
+| `dCRE_combined_4panel_MLvsARGv2/` | 2×2 shortwave dCRE decomposition, ML-ACT vs ARG-ACT, org / mid: half-hourly stacked components and time-mean bars (total, CF, A_Nc, A_LWP, A_re, A_cov). v3/v4 variants and 30-min ARG−ML tables included. | `dcre_csv/*.csv` (in git) |
+
+Replotting: `cd Paper_Figures/<bundle> && ./run.sh`. The two dCRE and
+consequences bundles are pure replots from the shipped CSV / cache files and run
+in seconds on a login node. The two parcel-model bundles need the per-case
+`20170714_*/online/{parcel_inputs,parcel_shard_0,diag_fn_ml_offline}.npz`
+files (~650 MB per case, 2.6 GB total), which exceed GitHub's file-size limit
+and are therefore **not committed**. They live on Stampede3 at
+
+    /scratch/07088/tg863871/RGMA_WRF/Paper_Figures/<bundle>/20170714_*/online/
+    /scratch/07088/tg863871/Perlm_Backup/WRF_stam3_ml_mixout_bce_lr1e-4_cosine_more_fix/test/<case>/online/
+
+Copy them beside the script before running those two bundles. Large rasterised
+EPS exports are likewise left out; the PNG (and PDF where produced) versions of
+every figure are committed.
+
+Source model runs (multi-TB, not included):
+
+    ML-ACT : /scratch/07088/tg863871/Perlm_Backup/WRF_stam3_ml_mixout_bce_lr1e-4_cosine_more_fix/test/20170714_{1,3}aer_{org,mid}
+    ARG-ACT: /scratch/07088/tg863871/WRF_dm_v2/test/20170714_{org,mid}_{1,3}aer_ARG
+
+The corresponding model source is preserved as the `WRF_ML` and `WRF_ARG`
+branches of https://github.com/liranpeng/WRF.
+
+---
+
 ## Authors
 
 This simulation pipeline was developed by Liran Peng and is part of RGMA project.

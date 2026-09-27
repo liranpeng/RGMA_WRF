@@ -1,0 +1,57 @@
+====================================================================================================
+POOLED ARG / EMULATOR / PARCEL COMPARISON
+====================================================================================================
+
+fn_parcel  Fortran box model on the stored WRF state (ground truth)
+fn_wrf     FN11 / FN21 -- ML emulator fraction WRF applied
+fn_ARG     FN13 / FN23 -- ARG fraction WRF computed for the same cell,
+           saved before the emulator overwrote fn(1,1)/fn(2,1).
+           Rows whose fn_ARG falls outside [0,1] in either mode are
+           DROPPED here: fn13/fn23 are persistent state arrays that the
+           GROW_SHRINK call site (module_mixactivate.F:789) never writes
+           for the emulated modes, so an unvisited cell can expose an
+           uninitialised value (seen up to 5.5e5 and -3.4e10).
+
+case               pool N  good solve       lost  ARG>1 or <0       kept
+1aer / org      1,500,000      16,058    159,134            0     13,632
+1aer / mid      1,500,000      26,063    627,663            0     13,353
+3aer / org      1,500,000      17,552    162,877            0     14,882
+3aer / mid      1,500,000      28,745    621,310            0     14,822
+POOLED                                                            56,689
+
+----------------------------------------------------------------------------------------------------
+Aitken
+----------------------------------------------------------------------------------------------------
+    ML emulator vs parcel              N=   56,689  MSE=6.7991e-04  RMSE=0.0261  bias=+0.0006  R=+0.9192
+      mean fn_parcel               0.0100   mean fn_wrf              0.0106
+      frac fn_parcel < 0.01        0.9428   frac fn_wrf < 0.01       0.9421
+    ARG         vs parcel              N=   56,689  MSE=2.1191e-04  RMSE=0.0146  bias=-0.0029  R=+0.9900
+      mean fn_parcel               0.0100   mean fn_ARG              0.0071
+      frac fn_parcel < 0.01        0.9428   frac fn_ARG < 0.01       0.9648
+    ARG         vs ML emulator         N=   56,689  MSE=8.7161e-04  RMSE=0.0295  bias=-0.0035  R=+0.9099
+      mean fn_wrf                  0.0106   mean fn_ARG              0.0071
+      frac fn_wrf < 0.01           0.9421   frac fn_ARG < 0.01       0.9648
+
+    full cleaned pool (no parcel-solve requirement):
+    ARG vs ML emulator (all cells)     N=4,429,016  MSE=1.0890e-03  RMSE=0.0330  bias=-0.0008  R=+0.7926
+      mean fn_wrf                  0.0071   mean fn_ARG              0.0063
+      frac fn_wrf < 0.01           0.9593   frac fn_ARG < 0.01       0.9673
+
+----------------------------------------------------------------------------------------------------
+Accum
+----------------------------------------------------------------------------------------------------
+    ML emulator vs parcel              N=   56,689  MSE=3.2222e-04  RMSE=0.0180  bias=+0.0001  R=+0.9962
+      mean fn_parcel               0.2112   mean fn_wrf              0.2113
+      frac fn_parcel < 0.01        0.0338   frac fn_wrf < 0.01       0.0346
+    ARG         vs parcel              N=   56,689  MSE=7.8431e-03  RMSE=0.0886  bias=-0.0663  R=+0.9652
+      mean fn_parcel               0.2112   mean fn_ARG              0.1449
+      frac fn_parcel < 0.01        0.0338   frac fn_ARG < 0.01       0.1199
+    ARG         vs ML emulator         N=   56,689  MSE=8.1030e-03  RMSE=0.0900  bias=-0.0664  R=+0.9620
+      mean fn_wrf                  0.2113   mean fn_ARG              0.1449
+      frac fn_wrf < 0.01           0.0346   frac fn_ARG < 0.01       0.1199
+
+    full cleaned pool (no parcel-solve requirement):
+    ARG vs ML emulator (all cells)     N=4,429,016  MSE=1.3078e-02  RMSE=0.1144  bias=-0.0277  R=+0.8284
+      mean fn_wrf                  0.1527   mean fn_ARG              0.1251
+      frac fn_wrf < 0.01           0.3046   frac fn_ARG < 0.01       0.1469
+

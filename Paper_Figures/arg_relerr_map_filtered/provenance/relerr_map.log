@@ -1,0 +1,13 @@
+loading 20170714_1aer_org ...
+    kept=13,632
+loading 20170714_1aer_mid ...
+    kept=13,353
+loading 20170714_3aer_org ...
+    kept=14,882
+loading 20170714_3aer_mid ...
+    kept=14,822
+pooled: 56,689
+Wrote /scratch/07088/tg863871/Perlm_Backup/WRF_stam3_ml_mixout_bce_lr1e-4_cosine_more_fix/test/arg_relerr_map_filtered.png
+The PostScript backend does not support transparency; partially transparent artists will be rendered opaque.
+Wrote /scratch/07088/tg863871/Perlm_Backup/WRF_stam3_ml_mixout_bce_lr1e-4_cosine_more_fix/test/arg_relerr_map_filtered.eps
+Wrote /scratch/07088/tg863871/Perlm_Backup/WRF_stam3_ml_mixout_bce_lr1e-4_cosine_more_fix/test/arg_relerr_map_filtered_stats.txt

@@ -1,0 +1,134 @@
+=== phase reconstruct (20170714_1aer_org)  Mon Aug  3 04:46:21 PM CDT 2026 ===
+======================================================================
+Reconstructing emulator inputs + applied FN from wrfout ...
+  wrfout_d01_2017-07-15_09:04:00: 54,510 updraft cells
+  wrfout_d01_2017-07-15_09:06:00: 52,440 updraft cells
+  wrfout_d01_2017-07-15_09:08:00: 51,367 updraft cells
+  wrfout_d01_2017-07-15_09:10:00: 50,751 updraft cells
+  wrfout_d01_2017-07-15_09:12:00: 50,349 updraft cells
+  wrfout_d01_2017-07-15_09:14:00: 50,317 updraft cells
+  wrfout_d01_2017-07-15_09:16:00: 50,303 updraft cells
+  wrfout_d01_2017-07-15_09:18:00: 50,548 updraft cells
+  wrfout_d01_2017-07-15_09:20:00: 50,622 updraft cells
+  wrfout_d01_2017-07-15_09:22:00: 50,875 updraft cells
+  wrfout_d01_2017-07-15_09:24:00: 51,019 updraft cells
+  wrfout_d01_2017-07-15_09:26:00: 51,336 updraft cells
+  wrfout_d01_2017-07-15_09:28:00: 51,362 updraft cells
+  wrfout_d01_2017-07-15_09:30:00: 51,384 updraft cells
+  wrfout_d01_2017-07-15_09:32:00: 51,212 updraft cells
+  wrfout_d01_2017-07-15_09:34:00: 51,295 updraft cells
+  wrfout_d01_2017-07-15_09:36:00: 51,489 updraft cells
+  wrfout_d01_2017-07-15_09:38:00: 51,337 updraft cells
+  wrfout_d01_2017-07-15_09:40:00: 50,926 updraft cells
+  wrfout_d01_2017-07-15_09:42:00: 51,079 updraft cells
+  wrfout_d01_2017-07-15_09:44:00: 51,165 updraft cells
+  wrfout_d01_2017-07-15_09:46:00: 50,939 updraft cells
+  wrfout_d01_2017-07-15_09:48:00: 50,709 updraft cells
+  wrfout_d01_2017-07-15_09:50:00: 50,783 updraft cells
+  wrfout_d01_2017-07-15_09:52:00: 51,065 updraft cells
+  wrfout_d01_2017-07-15_09:54:00: 51,060 updraft cells
+  wrfout_d01_2017-07-15_09:56:00: 51,353 updraft cells
+  wrfout_d01_2017-07-15_09:58:00: 51,630 updraft cells
+  wrfout_d01_2017-07-15_10:00:00: 51,652 updraft cells
+  wrfout_d01_2017-07-15_10:02:00: 52,027 updraft cells
+  wrfout_d01_2017-07-15_10:04:00: 52,251 updraft cells
+  wrfout_d01_2017-07-15_10:06:00: 52,702 updraft cells
+  wrfout_d01_2017-07-15_10:08:00: 52,974 updraft cells
+  wrfout_d01_2017-07-15_10:10:00: 53,295 updraft cells
+  wrfout_d01_2017-07-15_10:12:00: 53,355 updraft cells
+  wrfout_d01_2017-07-15_10:14:00: 53,414 updraft cells
+  wrfout_d01_2017-07-15_10:16:00: 53,522 updraft cells
+  wrfout_d01_2017-07-15_10:18:00: 53,534 updraft cells
+  wrfout_d01_2017-07-15_10:20:00: 53,132 updraft cells
+  wrfout_d01_2017-07-15_10:22:00: 52,359 updraft cells
+  wrfout_d01_2017-07-15_10:24:00: 51,645 updraft cells
+  wrfout_d01_2017-07-15_10:26:00: 51,196 updraft cells
+  wrfout_d01_2017-07-15_10:28:00: 50,926 updraft cells
+  wrfout_d01_2017-07-15_10:30:00: 50,655 updraft cells
+  wrfout_d01_2017-07-15_10:32:00: 50,643 updraft cells
+  wrfout_d01_2017-07-15_10:34:00: 50,706 updraft cells
+  wrfout_d01_2017-07-15_10:36:00: 50,837 updraft cells
+  wrfout_d01_2017-07-15_10:38:00: 50,887 updraft cells
+  wrfout_d01_2017-07-15_10:40:00: 50,619 updraft cells
+  wrfout_d01_2017-07-15_10:42:00: 50,537 updraft cells
+  wrfout_d01_2017-07-15_10:44:00: 50,470 updraft cells
+  wrfout_d01_2017-07-15_10:46:00: 50,252 updraft cells
+  wrfout_d01_2017-07-15_10:48:00: 49,943 updraft cells
+  wrfout_d01_2017-07-15_10:50:00: 49,705 updraft cells
+  wrfout_d01_2017-07-15_10:52:00: 49,275 updraft cells
+  wrfout_d01_2017-07-15_10:54:00: 48,932 updraft cells
+  wrfout_d01_2017-07-15_10:56:00: 48,569 updraft cells
+  wrfout_d01_2017-07-15_10:58:00: 47,856 updraft cells
+  wrfout_d01_2017-07-15_11:00:00: 47,325 updraft cells
+  wrfout_d01_2017-07-15_11:02:00: 47,158 updraft cells
+  wrfout_d01_2017-07-15_11:04:00: 46,820 updraft cells
+  wrfout_d01_2017-07-15_11:06:00: 46,988 updraft cells
+  wrfout_d01_2017-07-15_11:08:00: 47,422 updraft cells
+  wrfout_d01_2017-07-15_11:10:00: 47,956 updraft cells
+  wrfout_d01_2017-07-15_11:12:00: 48,514 updraft cells
+  wrfout_d01_2017-07-15_11:14:00: 49,163 updraft cells
+  wrfout_d01_2017-07-15_11:16:00: 49,711 updraft cells
+  wrfout_d01_2017-07-15_11:18:00: 50,484 updraft cells
+  wrfout_d01_2017-07-15_11:20:00: 51,036 updraft cells
+  wrfout_d01_2017-07-15_11:22:00: 51,690 updraft cells
+  wrfout_d01_2017-07-15_11:24:00: 51,924 updraft cells
+  wrfout_d01_2017-07-15_11:26:00: 52,133 updraft cells
+  wrfout_d01_2017-07-15_11:28:00: 52,489 updraft cells
+  wrfout_d01_2017-07-15_11:30:00: 52,816 updraft cells
+  wrfout_d01_2017-07-15_11:32:00: 53,357 updraft cells
+  wrfout_d01_2017-07-15_11:34:00: 54,176 updraft cells
+  wrfout_d01_2017-07-15_11:36:00: 55,521 updraft cells
+  wrfout_d01_2017-07-15_11:38:00: 57,068 updraft cells
+  wrfout_d01_2017-07-15_11:40:00: 58,753 updraft cells
+  wrfout_d01_2017-07-15_11:42:00: 60,364 updraft cells
+  wrfout_d01_2017-07-15_11:44:00: 61,480 updraft cells
+  wrfout_d01_2017-07-15_11:46:00: 62,746 updraft cells
+  wrfout_d01_2017-07-15_11:48:00: 63,515 updraft cells
+  wrfout_d01_2017-07-15_11:50:00: 64,715 updraft cells
+  wrfout_d01_2017-07-15_11:52:00: 65,946 updraft cells
+  wrfout_d01_2017-07-15_11:54:00: 67,150 updraft cells
+  wrfout_d01_2017-07-15_11:56:00: 68,613 updraft cells
+Subsampled to 1,500,000 cells (--max_cells)
+Total updraft cells: 1,500,000
+Wrote inputs -> /scratch/07088/tg863871/Perlm_Backup/WRF_stam3_ml_mixout_bce_lr1e-4_cosine_more_fix/test/20170714_1aer_org/online/parcel_inputs.npz  (N=1,500,000)
+=== phase parcel (1 node, deadline=12000s)  Mon Aug  3 04:57:56 PM CDT 2026 ===
+[shard 0/1] 1,500,000 of 1,500,000 selected (1,500,000 total) cells on 48 workers (48 cores), deadline=12000s
+  parcel 2,500/1,500,000 (  0%)     1.9 samp/s  eta 13440.6 min
+  parcel 5,000/1,500,000 (  0%)     1.9 samp/s  eta 13381.1 min
+  parcel 7,500/1,500,000 (  0%)     1.8 samp/s  eta 13507.5 min
+  parcel 10,000/1,500,000 (  0%)     1.9 samp/s  eta 13390.4 min
+  parcel 12,500/1,500,000 (  0%)     1.9 samp/s  eta 13356.5 min
+  parcel 15,000/1,500,000 (  1%)     1.9 samp/s  eta 13362.8 min
+  parcel 17,500/1,500,000 (  1%)     1.8 samp/s  eta 13385.8 min
+  parcel 20,000/1,500,000 (  1%)     1.8 samp/s  eta 13338.8 min
+  deadline 12000s reached after 22,169/1,500,000 cells -- stopping, keeping completed solves
+Parcel model stopped at deadline (12001s, 22,169 cells solved)
+[shard 0] wrote parcel_shard_0.npz
+=== phase merge  Mon Aug  3 08:18:00 PM CDT 2026 ===
+Merged 1 shards -> 22,169 solved cells (N=1,500,000)
+Pool cells: 1,500,000   attempted: 22,169 (1.5% of pool)   clean solves: 16,058 (72.4% of attempted)
+
+===== parcel vs wrfout emulator  (N=16,058) =====
+  [Aitken]  N=16,058
+     fn_parcel : mean=0.0074  median=0.0001  >0.99=0.000  <0.01=0.935
+     fn_wrf(ML): mean=0.0052  median=0.0000  >0.99=0.000  <0.01=0.945
+     ML-parcel : mean diff=-0.0022  MSE=0.0008  RMSE=0.0286  corr=+0.777
+     fraction parcel<0.5 but ML>0.99 (emulator over-activates): 0.000
+  [Accum]  N=16,058
+     fn_parcel : mean=0.2373  median=0.1800  >0.99=0.000  <0.01=0.016
+     fn_wrf(ML): mean=0.2010  median=0.1443  >0.99=0.000  <0.01=0.167
+     ML-parcel : mean diff=-0.0363  MSE=0.0151  RMSE=0.1229  corr=+0.837
+     fraction parcel<0.5 but ML>0.99 (emulator over-activates): 0.000
+
+Wrote scatter -> /scratch/07088/tg863871/Perlm_Backup/WRF_stam3_ml_mixout_bce_lr1e-4_cosine_more_fix/test/20170714_1aer_org/online/parcel_vs_wrfout_20170714_1aer_org_scatter.png
+Wrote scatter -> /scratch/07088/tg863871/Perlm_Backup/WRF_stam3_ml_mixout_bce_lr1e-4_cosine_more_fix/test/20170714_1aer_org/online/parcel_vs_wrfout_20170714_1aer_org_scatter.eps
+Wrote histogram -> /scratch/07088/tg863871/Perlm_Backup/WRF_stam3_ml_mixout_bce_lr1e-4_cosine_more_fix/test/20170714_1aer_org/online/parcel_vs_wrfout_20170714_1aer_org_hist.png
+Wrote histogram -> /scratch/07088/tg863871/Perlm_Backup/WRF_stam3_ml_mixout_bce_lr1e-4_cosine_more_fix/test/20170714_1aer_org/online/parcel_vs_wrfout_20170714_1aer_org_hist.eps
+
+======================================================================
+fn_parcel = ground-truth Fortran box model on the WRF states;
+fn_wrf    = ML emulator fraction WRF actually applied (FN11/FN21).
+Large ML>0.99 while parcel<0.5 => the deployed emulator over-activates
+on the real WRF distribution (the online saturation).
+======================================================================
+=== done  Mon Aug  3 08:18:06 PM CDT 2026 ===

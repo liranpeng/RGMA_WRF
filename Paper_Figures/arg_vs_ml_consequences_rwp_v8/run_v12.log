@@ -1,0 +1,50 @@
+loading cache arg_vs_ml_consequences_rwp_v4_series_CCN2.npz
+  seeded 8 case(s) from arg_vs_ml_consequences_rwp_v4_series_CCN2.npz (ARG_mid, ARG_mid_3aer, ARG_org, ARG_org_3aer remapped from V2_mid, V2_mid_3aer, V2_org, V2_org_3aer)
+all 8 case(s) already cached
+plotting: org, org_3aer, mid, mid_3aer, ARG_org, ARG_org_3aer, ARG_mid, ARG_mid_3aer
+wrote arg_vs_ml_consequences_rwp_v12.png
+The PostScript backend does not support transparency; partially transparent artists will be rendered opaque.
+wrote arg_vs_ml_consequences_rwp_v12.eps
+
+=== ML vs ARG (WRF_dm_v2), mean over the overlapping window ===
+pair         var                    ML          ARG       ARG/ML  (matched times)
+-- org (121 matched frames, 09:04 - 13:04)
+org          ac0                  5243         5241        1.000
+org          ccn                 20.11        20.16        1.002
+org          QNDROP              39.33        32.73        0.832
+org          r_v                 7.485        8.864        1.184
+org          rain_rate        0.002889     0.000701        0.243
+org          LWP_TOT             27.14        35.74        1.317
+org          RWP                 2.572       0.6629        0.258
+org          qc_gkg            0.01307      0.01721        1.317
+org          SWCRE              -58.62       -67.89        1.158
+-- org_3aer (129 matched frames, 09:04 - 13:20)
+org_3aer     ac0              1.28e+04    1.277e+04        0.998
+org_3aer     ccn                 49.17        49.07        0.998
+org_3aer     QNDROP              85.04        58.35        0.686
+org_3aer     r_v                 5.865        7.577        1.292
+org_3aer     rain_rate        0.002852    0.0005643        0.198
+org_3aer     LWP_TOT             28.44        37.41        1.316
+org_3aer     RWP                   2.4       0.5328        0.222
+org_3aer     qc_gkg            0.01369      0.01801        1.315
+org_3aer     SWCRE              -76.36       -83.38        1.092
+-- mid (151 matched frames, 09:04 - 14:04)
+mid          ac0                  2136         2163        1.013
+mid          ccn                 8.993        9.004        1.001
+mid          QNDROP              36.82        21.72        0.590
+mid          r_v                 14.83        21.43        1.445
+mid          rain_rate           2.335         2.35        1.006
+mid          LWP_TOT             170.1        162.6        0.956
+mid          RWP                 192.1        195.1        1.016
+mid          qc_gkg            0.08113      0.07791        0.960
+mid          SWCRE              -257.2       -221.5        0.861
+-- mid_3aer (151 matched frames, 09:04 - 14:04)
+mid_3aer     ac0                  5437         5487        1.009
+mid_3aer     ccn                 23.04         22.9        0.994
+mid_3aer     QNDROP              67.58        31.16        0.461
+mid_3aer     r_v                 11.74        17.87        1.522
+mid_3aer     rain_rate           2.328        2.341        1.005
+mid_3aer     LWP_TOT             187.6        186.7        0.995
+mid_3aer     RWP                 185.2          185        0.999
+mid_3aer     qc_gkg            0.08943      0.08937        0.999
+mid_3aer     SWCRE              -297.7       -267.1        0.897

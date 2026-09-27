@@ -1,0 +1,184 @@
+================================================================
+  Generator  : trace_east_boundary_subdomains_lwp_v23_argv2.py
+  ARG tree   : /scratch/07088/tg863871/WRF_dm_v2/test
+  Window end : 2017-07-15_13:00:00
+  Output dir : /scratch/07088/tg863871/WRF_liran/JP/dcre_figures_v23_argv2_1300
+  Started    : Sat Aug 15 11:02:08 PM CDT 2026
+================================================================
+org: 160 wrfout files
+  Skip /scratch/07088/tg863871/Perlm_Backup/WRF_stam3_ml_mixout_bce_lr1e-4_cosine_more_fix/test/20170714_3aer_org/wrfout_d01_2017-07-15_14:04:00: index 0 is out of bounds for axis 0 with size 0
+org_3aer: 150 wrfout files
+mid: 151 wrfout files
+mid_3aer: 151 wrfout files
+ARG_org: 121 wrfout files
+ARG_org_3aer: 129 wrfout files
+ARG_mid: 124 wrfout files
+ARG_mid_3aer: 129 wrfout files
+Analysis window ends 2017-07-15 13:00 (WRF_TEND); dropped 2 later shared step(s)
+
+Shared time steps across all 8 cases: 119 (2017-07-15 09:04 .. 13:00)
+
+Tracing Lagrangian boxes for all cases ...
+  org: traced 119 times
+  org_3aer: traced 119 times
+  mid: traced 119 times
+  mid_3aer: traced 119 times
+  ARG_org: traced 119 times
+  ARG_org_3aer: traced 119 times
+  ARG_mid: traced 119 times
+  ARG_mid_3aer: traced 119 times
+
+Computing box + domain time series (all cases) ...
+  org: box + domain TS done (119 steps)
+  org_3aer: box + domain TS done (119 steps)
+  mid: box + domain TS done (119 steps)
+  mid_3aer: box + domain TS done (119 steps)
+  ARG_org: box + domain TS done (119 steps)
+  ARG_org_3aer: box + domain TS done (119 steps)
+  ARG_mid: box + domain TS done (119 steps)
+  ARG_mid_3aer: box + domain TS done (119 steps)
+
+Computing dCRE decompositions (pixel-wise + mean-based, all pairs) ...
+  dCRE (pw + mb) for org_3aer-org: 119 times
+  dCRE (pw + mb) for mid_3aer-mid: 119 times
+  dCRE (pw + mb) for ARG_org_3aer-ARG_org: 119 times
+  dCRE (pw + mb) for ARG_mid_3aer-ARG_mid: 119 times
+  Saved /scratch/07088/tg863871/WRF_liran/JP/dcre_figures_v23_argv2_1300/dcre_pixelwise_org_3aer_org_by_box.csv
+  Saved /scratch/07088/tg863871/WRF_liran/JP/dcre_figures_v23_argv2_1300/dcre_meanbased_org_3aer_org_by_box.csv
+  Saved /scratch/07088/tg863871/WRF_liran/JP/dcre_figures_v23_argv2_1300/dcre_pixelwise_org_3aer_org_domain.csv
+  Saved /scratch/07088/tg863871/WRF_liran/JP/dcre_figures_v23_argv2_1300/dcre_meanbased_org_3aer_org_domain.csv
+  Saved /scratch/07088/tg863871/WRF_liran/JP/dcre_figures_v23_argv2_1300/dcre_pixelwise_mid_3aer_mid_by_box.csv
+  Saved /scratch/07088/tg863871/WRF_liran/JP/dcre_figures_v23_argv2_1300/dcre_meanbased_mid_3aer_mid_by_box.csv
+  Saved /scratch/07088/tg863871/WRF_liran/JP/dcre_figures_v23_argv2_1300/dcre_pixelwise_mid_3aer_mid_domain.csv
+  Saved /scratch/07088/tg863871/WRF_liran/JP/dcre_figures_v23_argv2_1300/dcre_meanbased_mid_3aer_mid_domain.csv
+  Saved /scratch/07088/tg863871/WRF_liran/JP/dcre_figures_v23_argv2_1300/dcre_pixelwise_ARG_org_3aer_ARG_org_by_box.csv
+  Saved /scratch/07088/tg863871/WRF_liran/JP/dcre_figures_v23_argv2_1300/dcre_meanbased_ARG_org_3aer_ARG_org_by_box.csv
+  Saved /scratch/07088/tg863871/WRF_liran/JP/dcre_figures_v23_argv2_1300/dcre_pixelwise_ARG_org_3aer_ARG_org_domain.csv
+  Saved /scratch/07088/tg863871/WRF_liran/JP/dcre_figures_v23_argv2_1300/dcre_meanbased_ARG_org_3aer_ARG_org_domain.csv
+  Saved /scratch/07088/tg863871/WRF_liran/JP/dcre_figures_v23_argv2_1300/dcre_pixelwise_ARG_mid_3aer_ARG_mid_by_box.csv
+  Saved /scratch/07088/tg863871/WRF_liran/JP/dcre_figures_v23_argv2_1300/dcre_meanbased_ARG_mid_3aer_ARG_mid_by_box.csv
+  Saved /scratch/07088/tg863871/WRF_liran/JP/dcre_figures_v23_argv2_1300/dcre_pixelwise_ARG_mid_3aer_ARG_mid_domain.csv
+  Saved /scratch/07088/tg863871/WRF_liran/JP/dcre_figures_v23_argv2_1300/dcre_meanbased_ARG_mid_3aer_ARG_mid_domain.csv
+  Fixed LWP colorbar: 0.0–200.0 g m⁻²
+
+Tracing per-timestep launched boxes (org wind) ...
+  Launched boxes: 119 trajectories
+
+Computing LWP + dCRE for launched trajectories ...
+  dCRE for launched trajectories — org_3aer-org ...
+  dCRE for launched trajectories — mid_3aer-mid ...
+  dCRE for launched trajectories — ARG_org_3aer-ARG_org ...
+  dCRE for launched trajectories — ARG_mid_3aer-ARG_mid ...
+
+Skipping per-timestep Figures 1 & 2 (119 times, ~0.7 GB).  Set WRF_MAP_FIGURES=1 to generate them.
+
+Generating Figure 3: time-averaged dCRE bar plot (all 4 pairs) ...
+  Saved /scratch/07088/tg863871/WRF_liran/JP/dcre_figures_v23_argv2_1300/dCRE_timeavg_barplot_all4pairs.png
+
+Generating Figure 4: LWP-stratified dCRE (ML pairs) ...
+  Saved /scratch/07088/tg863871/WRF_liran/JP/dcre_figures_v23_argv2_1300/dCRE_LWP_stratified_barplot.png
+
+Generating Figure 5: domain dCRE bar plot (all 4 pairs) ...
+  Saved /scratch/07088/tg863871/WRF_liran/JP/dcre_figures_v23_argv2_1300/dCRE_domain_barplot_all4pairs.png
+
+Generating Figure 6: dCRE vs met regime (all 4 pairs) ...
+  Building sample df for org_3aer-org ...
+    476 box-timestep samples
+  Saved /scratch/07088/tg863871/WRF_liran/JP/dcre_figures_v23_argv2_1300/dCRE_met_binned_org_3aer_org.pdf
+  Saved /scratch/07088/tg863871/WRF_liran/JP/dcre_figures_v23_argv2_1300/dCRE_met_binned_org_3aer_org.png
+  Building sample df for mid_3aer-mid ...
+    476 box-timestep samples
+  Saved /scratch/07088/tg863871/WRF_liran/JP/dcre_figures_v23_argv2_1300/dCRE_met_binned_mid_3aer_mid.pdf
+  Saved /scratch/07088/tg863871/WRF_liran/JP/dcre_figures_v23_argv2_1300/dCRE_met_binned_mid_3aer_mid.png
+  Building sample df for ARG_org_3aer-ARG_org ...
+    476 box-timestep samples
+  Saved /scratch/07088/tg863871/WRF_liran/JP/dcre_figures_v23_argv2_1300/dCRE_met_binned_ARG_org_3aer_ARG_org.pdf
+  Saved /scratch/07088/tg863871/WRF_liran/JP/dcre_figures_v23_argv2_1300/dCRE_met_binned_ARG_org_3aer_ARG_org.png
+  Building sample df for ARG_mid_3aer-ARG_mid ...
+    476 box-timestep samples
+  Saved /scratch/07088/tg863871/WRF_liran/JP/dcre_figures_v23_argv2_1300/dCRE_met_binned_ARG_mid_3aer_ARG_mid.pdf
+  Saved /scratch/07088/tg863871/WRF_liran/JP/dcre_figures_v23_argv2_1300/dCRE_met_binned_ARG_mid_3aer_ARG_mid.png
+
+Generating Figure 7: pixel-wise vs mean-based (all 4 pairs) ...
+  Saved /scratch/07088/tg863871/WRF_liran/JP/dcre_figures_v23_argv2_1300/dCRE_method_comparison_org_3aer_org.png
+  Saved /scratch/07088/tg863871/WRF_liran/JP/dcre_figures_v23_argv2_1300/dCRE_method_comparison_org_3aer_org.pdf
+  Saved /scratch/07088/tg863871/WRF_liran/JP/dcre_figures_v23_argv2_1300/dCRE_method_comparison_mid_3aer_mid.png
+  Saved /scratch/07088/tg863871/WRF_liran/JP/dcre_figures_v23_argv2_1300/dCRE_method_comparison_mid_3aer_mid.pdf
+  Saved /scratch/07088/tg863871/WRF_liran/JP/dcre_figures_v23_argv2_1300/dCRE_method_comparison_ARG_org_3aer_ARG_org.png
+  Saved /scratch/07088/tg863871/WRF_liran/JP/dcre_figures_v23_argv2_1300/dCRE_method_comparison_ARG_org_3aer_ARG_org.pdf
+  Saved /scratch/07088/tg863871/WRF_liran/JP/dcre_figures_v23_argv2_1300/dCRE_method_comparison_ARG_mid_3aer_ARG_mid.png
+  Saved /scratch/07088/tg863871/WRF_liran/JP/dcre_figures_v23_argv2_1300/dCRE_method_comparison_ARG_mid_3aer_ARG_mid.pdf
+
+Generating Figure 8: ML vs ARG domain comparison ...
+  Saved /scratch/07088/tg863871/WRF_liran/JP/dcre_figures_v23_argv2_1300/dCRE_ML_ARG_domain_comparison.png
+  Saved /scratch/07088/tg863871/WRF_liran/JP/dcre_figures_v23_argv2_1300/dCRE_ML_ARG_domain_comparison.pdf
+
+Generating Figure 10: ML vs ARG domain comparison, hourly + all times ...
+  Saved /scratch/07088/tg863871/WRF_liran/JP/dcre_figures_v23_argv2_1300/dCRE_ML_ARG_domain_comparison_HH09.png
+  Saved /scratch/07088/tg863871/WRF_liran/JP/dcre_figures_v23_argv2_1300/dCRE_ML_ARG_domain_comparison_HH09.pdf
+  Saved /scratch/07088/tg863871/WRF_liran/JP/dcre_figures_v23_argv2_1300/dCRE_ML_ARG_domain_comparison_HH10.png
+  Saved /scratch/07088/tg863871/WRF_liran/JP/dcre_figures_v23_argv2_1300/dCRE_ML_ARG_domain_comparison_HH10.pdf
+  Saved /scratch/07088/tg863871/WRF_liran/JP/dcre_figures_v23_argv2_1300/dCRE_ML_ARG_domain_comparison_HH11.png
+  Saved /scratch/07088/tg863871/WRF_liran/JP/dcre_figures_v23_argv2_1300/dCRE_ML_ARG_domain_comparison_HH11.pdf
+  Saved /scratch/07088/tg863871/WRF_liran/JP/dcre_figures_v23_argv2_1300/dCRE_ML_ARG_domain_comparison_HH12.png
+  Saved /scratch/07088/tg863871/WRF_liran/JP/dcre_figures_v23_argv2_1300/dCRE_ML_ARG_domain_comparison_HH12.pdf
+  hour 13:00: only 1 time(s) in the thinnest panel (< 5) — skipped
+  Saved /scratch/07088/tg863871/WRF_liran/JP/dcre_figures_v23_argv2_1300/dCRE_ML_ARG_domain_comparison_ALL.png
+  Saved /scratch/07088/tg863871/WRF_liran/JP/dcre_figures_v23_argv2_1300/dCRE_ML_ARG_domain_comparison_ALL.pdf
+  Figure 10: 4 hourly figure(s) + 1 all-times figure
+
+Generating Figure 11: 30-min stacked dCRE time series (all 4 pairs) ...
+  Saved /scratch/07088/tg863871/WRF_liran/JP/dcre_figures_v23_argv2_1300/dCRE_timeseries_stacked_org_3aer_org.png
+  Saved /scratch/07088/tg863871/WRF_liran/JP/dcre_figures_v23_argv2_1300/dCRE_timeseries_stacked_org_3aer_org.pdf
+  Saved /scratch/07088/tg863871/WRF_liran/JP/dcre_figures_v23_argv2_1300/dCRE_timeseries_stacked_mid_3aer_mid.png
+  Saved /scratch/07088/tg863871/WRF_liran/JP/dcre_figures_v23_argv2_1300/dCRE_timeseries_stacked_mid_3aer_mid.pdf
+  Saved /scratch/07088/tg863871/WRF_liran/JP/dcre_figures_v23_argv2_1300/dCRE_timeseries_stacked_ARG_org_3aer_ARG_org.png
+  Saved /scratch/07088/tg863871/WRF_liran/JP/dcre_figures_v23_argv2_1300/dCRE_timeseries_stacked_ARG_org_3aer_ARG_org.pdf
+  Saved /scratch/07088/tg863871/WRF_liran/JP/dcre_figures_v23_argv2_1300/dCRE_timeseries_stacked_ARG_mid_3aer_ARG_mid.png
+  Saved /scratch/07088/tg863871/WRF_liran/JP/dcre_figures_v23_argv2_1300/dCRE_timeseries_stacked_ARG_mid_3aer_ARG_mid.pdf
+
+Generating Figure 9: dispersion (β–Nc) consistency check ...
+  org: β–Nc n=12817716  <β>=1.269  <ε>=0.525
+  org_3aer: β–Nc n=13435162  <β>=1.329  <ε>=0.584
+  mid: β–Nc n=33375461  <β>=1.455  <ε>=0.677
+  mid_3aer: β–Nc n=33572372  <β>=1.551  <ε>=0.740
+  ARG_org: β–Nc n=14112727  <β>=1.205  <ε>=0.458
+  ARG_org_3aer: β–Nc n=14630201  <β>=1.236  <ε>=0.500
+  ARG_mid: β–Nc n=33359148  <β>=1.351  <ε>=0.610
+  ARG_mid_3aer: β–Nc n=33574762  <β>=1.391  <ε>=0.648
+
+  ── Dispersion (β–Nc) consistency ─────────────────────────────────
+  b = dlnβ/dlnNc ;  Twomey offset = −3b·100%  (Wang et al. 2025: |b|≈0.024, ≈7%)
+                     n  beta_mean  eps_mean  b_dlnbeta_dlnNc  twomey_offset_pct
+case                                                                           
+org           12817716      1.269    0.5249          0.02537             -7.612
+org_3aer      13435162      1.329    0.5837          0.02712             -8.135
+mid           33375461      1.455     0.677          0.04514             -13.54
+mid_3aer      33572372      1.551    0.7403          0.05039             -15.12
+ARG_org       14112727      1.205    0.4578          0.03441             -10.32
+ARG_org_3aer  14630201      1.236    0.4998          0.03882             -11.65
+ARG_mid       33359148      1.351    0.6104          0.03661             -10.98
+ARG_mid_3aer  33574762      1.391    0.6478          0.03377             -10.13
+
+  Per-pair (perturbed − control; sign matches DCRE_A_re):
+                     scheme background  dlnbeta  dlnNc  b_pair  twomey_offset_pct
+pair                                                                             
+org_3aer-org             ML        org  0.04065 0.7965 0.05103             -15.31
+mid_3aer-mid             ML        mid  0.05478 0.6719 0.08153             -24.46
+ARG_org_3aer-ARG_org    ARG        org  0.02534 0.6184 0.04097             -12.29
+ARG_mid_3aer-ARG_mid    ARG        mid  0.02605 0.6172  0.0422             -12.66
+  Saved /scratch/07088/tg863871/WRF_liran/JP/dcre_figures_v23_argv2_1300/dispersion_beta_Nc_by_case.csv
+  Saved /scratch/07088/tg863871/WRF_liran/JP/dcre_figures_v23_argv2_1300/dispersion_beta_Nc_by_pair.csv
+  Saved /scratch/07088/tg863871/WRF_liran/JP/dcre_figures_v23_argv2_1300/dispersion_beta_Nc_scatter.png
+  Saved /scratch/07088/tg863871/WRF_liran/JP/dcre_figures_v23_argv2_1300/dispersion_beta_Nc_scatter.pdf
+  Saved /scratch/07088/tg863871/WRF_liran/JP/dcre_figures_v23_argv2_1300/dispersion_twomey_offset.png
+  Saved /scratch/07088/tg863871/WRF_liran/JP/dcre_figures_v23_argv2_1300/dispersion_twomey_offset.pdf
+
+All done.
+
+===== replotting the combined 4-panel ML vs ARG-v2 figure =====
+  wrote /scratch/07088/tg863871/WRF_liran/JP/dcre_figures_v23_argv2_1300/dCRE_combined_4panel_MLvsARGv2.png
+  wrote /scratch/07088/tg863871/WRF_liran/JP/dcre_figures_v23_argv2_1300/dCRE_combined_4panel_MLvsARGv2.pdf
+The PostScript backend does not support transparency; partially transparent artists will be rendered opaque.
+  wrote /scratch/07088/tg863871/WRF_liran/JP/dcre_figures_v23_argv2_1300/dCRE_combined_4panel_MLvsARGv2.eps
+Finished at Sun Aug 16 12:30:23 PM CDT 2026.

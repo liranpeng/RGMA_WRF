@@ -1,0 +1,9 @@
+# Paper_Figures: keep scripts, READMEs, PNG/PDF figures, CSV/TXT tables and the
+# small series caches. Exclude the multi-GB per-case parcel/emulator inputs
+# (single files > GitHub's 100 MB limit) and the 25-80 MB rasterised EPS files.
+Paper_Figures/*/20170714_*/online/
+Paper_Figures/**/*.eps
+!Paper_Figures/arg_vs_ml_consequences_rwp_v8/*.eps
+__pycache__/
+*.pyc
+.DS_Store

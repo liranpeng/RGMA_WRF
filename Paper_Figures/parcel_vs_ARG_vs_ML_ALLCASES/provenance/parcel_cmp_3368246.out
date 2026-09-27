@@ -1,0 +1,124 @@
+=== phase reconstruct (20170714_3aer_org)  Mon Aug  3 04:46:20 PM CDT 2026 ===
+======================================================================
+Reconstructing emulator inputs + applied FN from wrfout ...
+  wrfout_d01_2017-07-15_09:04:00: 54,787 updraft cells
+  wrfout_d01_2017-07-15_09:06:00: 52,938 updraft cells
+  wrfout_d01_2017-07-15_09:08:00: 52,079 updraft cells
+  wrfout_d01_2017-07-15_09:10:00: 51,459 updraft cells
+  wrfout_d01_2017-07-15_09:12:00: 51,173 updraft cells
+  wrfout_d01_2017-07-15_09:14:00: 51,171 updraft cells
+  wrfout_d01_2017-07-15_09:16:00: 51,203 updraft cells
+  wrfout_d01_2017-07-15_09:18:00: 51,390 updraft cells
+  wrfout_d01_2017-07-15_09:20:00: 51,521 updraft cells
+  wrfout_d01_2017-07-15_09:22:00: 51,786 updraft cells
+  wrfout_d01_2017-07-15_09:24:00: 52,008 updraft cells
+  wrfout_d01_2017-07-15_09:26:00: 52,194 updraft cells
+  wrfout_d01_2017-07-15_09:28:00: 52,340 updraft cells
+  wrfout_d01_2017-07-15_09:30:00: 52,478 updraft cells
+  wrfout_d01_2017-07-15_09:32:00: 52,201 updraft cells
+  wrfout_d01_2017-07-15_09:34:00: 52,389 updraft cells
+  wrfout_d01_2017-07-15_09:36:00: 52,523 updraft cells
+  wrfout_d01_2017-07-15_09:38:00: 52,475 updraft cells
+  wrfout_d01_2017-07-15_09:40:00: 51,940 updraft cells
+  wrfout_d01_2017-07-15_09:42:00: 52,037 updraft cells
+  wrfout_d01_2017-07-15_09:44:00: 52,161 updraft cells
+  wrfout_d01_2017-07-15_09:46:00: 52,077 updraft cells
+  wrfout_d01_2017-07-15_09:48:00: 51,795 updraft cells
+  wrfout_d01_2017-07-15_09:50:00: 52,019 updraft cells
+  wrfout_d01_2017-07-15_09:52:00: 52,227 updraft cells
+  wrfout_d01_2017-07-15_09:54:00: 52,391 updraft cells
+  wrfout_d01_2017-07-15_09:56:00: 53,016 updraft cells
+  wrfout_d01_2017-07-15_09:58:00: 53,146 updraft cells
+  wrfout_d01_2017-07-15_10:00:00: 53,189 updraft cells
+  wrfout_d01_2017-07-15_10:02:00: 53,444 updraft cells
+  wrfout_d01_2017-07-15_10:04:00: 53,878 updraft cells
+  wrfout_d01_2017-07-15_10:06:00: 54,359 updraft cells
+  wrfout_d01_2017-07-15_10:08:00: 54,671 updraft cells
+  wrfout_d01_2017-07-15_10:10:00: 54,852 updraft cells
+  wrfout_d01_2017-07-15_10:12:00: 55,003 updraft cells
+  wrfout_d01_2017-07-15_10:14:00: 55,154 updraft cells
+  wrfout_d01_2017-07-15_10:16:00: 55,370 updraft cells
+  wrfout_d01_2017-07-15_10:18:00: 55,305 updraft cells
+  wrfout_d01_2017-07-15_10:20:00: 55,044 updraft cells
+  wrfout_d01_2017-07-15_10:22:00: 54,227 updraft cells
+  wrfout_d01_2017-07-15_10:24:00: 53,706 updraft cells
+  wrfout_d01_2017-07-15_10:26:00: 52,969 updraft cells
+  wrfout_d01_2017-07-15_10:28:00: 52,784 updraft cells
+  wrfout_d01_2017-07-15_10:30:00: 52,540 updraft cells
+  wrfout_d01_2017-07-15_10:32:00: 52,670 updraft cells
+  wrfout_d01_2017-07-15_10:34:00: 52,858 updraft cells
+  wrfout_d01_2017-07-15_10:36:00: 52,899 updraft cells
+  wrfout_d01_2017-07-15_10:38:00: 52,961 updraft cells
+  wrfout_d01_2017-07-15_10:40:00: 53,066 updraft cells
+  wrfout_d01_2017-07-15_10:42:00: 52,946 updraft cells
+  wrfout_d01_2017-07-15_10:44:00: 52,947 updraft cells
+  wrfout_d01_2017-07-15_10:46:00: 52,770 updraft cells
+  wrfout_d01_2017-07-15_10:48:00: 52,529 updraft cells
+  wrfout_d01_2017-07-15_10:50:00: 52,128 updraft cells
+  wrfout_d01_2017-07-15_10:52:00: 52,099 updraft cells
+  wrfout_d01_2017-07-15_10:54:00: 51,902 updraft cells
+  wrfout_d01_2017-07-15_10:56:00: 51,316 updraft cells
+  wrfout_d01_2017-07-15_10:58:00: 50,638 updraft cells
+  wrfout_d01_2017-07-15_11:00:00: 50,398 updraft cells
+  wrfout_d01_2017-07-15_11:02:00: 50,200 updraft cells
+  wrfout_d01_2017-07-15_11:04:00: 49,976 updraft cells
+  wrfout_d01_2017-07-15_11:06:00: 50,290 updraft cells
+  wrfout_d01_2017-07-15_11:08:00: 50,706 updraft cells
+  wrfout_d01_2017-07-15_11:10:00: 51,097 updraft cells
+  wrfout_d01_2017-07-15_11:12:00: 51,511 updraft cells
+  wrfout_d01_2017-07-15_11:14:00: 52,179 updraft cells
+  wrfout_d01_2017-07-15_11:16:00: 52,908 updraft cells
+  wrfout_d01_2017-07-15_11:18:00: 53,706 updraft cells
+  wrfout_d01_2017-07-15_11:20:00: 54,381 updraft cells
+  wrfout_d01_2017-07-15_11:22:00: 55,054 updraft cells
+  wrfout_d01_2017-07-15_11:24:00: 55,373 updraft cells
+  wrfout_d01_2017-07-15_11:26:00: 55,693 updraft cells
+  wrfout_d01_2017-07-15_11:28:00: 56,102 updraft cells
+  wrfout_d01_2017-07-15_11:30:00: 56,695 updraft cells
+  wrfout_d01_2017-07-15_11:32:00: 57,376 updraft cells
+  wrfout_d01_2017-07-15_11:34:00: 58,435 updraft cells
+Subsampled to 1,500,000 cells (--max_cells)
+Total updraft cells: 1,500,000
+Wrote inputs -> /scratch/07088/tg863871/Perlm_Backup/WRF_stam3_ml_mixout_bce_lr1e-4_cosine_more_fix/test/20170714_3aer_org/online/parcel_inputs.npz  (N=1,500,000)
+=== phase parcel (1 node, deadline=12000s)  Mon Aug  3 04:55:37 PM CDT 2026 ===
+[shard 0/1] 1,500,000 of 1,500,000 selected (1,500,000 total) cells on 48 workers (48 cores), deadline=12000s
+  parcel 2,500/1,500,000 (  0%)     2.0 samp/s  eta 12560.6 min
+  parcel 5,000/1,500,000 (  0%)     2.0 samp/s  eta 12541.3 min
+  parcel 7,500/1,500,000 (  0%)     2.0 samp/s  eta 12407.9 min
+  parcel 10,000/1,500,000 (  0%)     2.0 samp/s  eta 12551.2 min
+  parcel 12,500/1,500,000 (  0%)     2.0 samp/s  eta 12449.8 min
+  parcel 15,000/1,500,000 (  1%)     2.0 samp/s  eta 12406.3 min
+  parcel 17,500/1,500,000 (  1%)     2.0 samp/s  eta 12396.3 min
+  parcel 20,000/1,500,000 (  1%)     2.0 samp/s  eta 12343.0 min
+  parcel 22,500/1,500,000 (  1%)     2.0 samp/s  eta 12319.0 min
+  deadline 12000s reached after 24,006/1,500,000 cells -- stopping, keeping completed solves
+Parcel model stopped at deadline (12001s, 24,006 cells solved)
+[shard 0] wrote parcel_shard_0.npz
+=== phase merge  Mon Aug  3 08:15:41 PM CDT 2026 ===
+Merged 1 shards -> 24,006 solved cells (N=1,500,000)
+Pool cells: 1,500,000   attempted: 24,006 (1.6% of pool)   clean solves: 17,552 (73.1% of attempted)
+
+===== parcel vs wrfout emulator  (N=17,552) =====
+  [Aitken]  N=17,552
+     fn_parcel : mean=0.0096  median=0.0000  >0.99=0.000  <0.01=0.959
+     fn_wrf(ML): mean=0.0069  median=0.0000  >0.99=0.000  <0.01=0.967
+     ML-parcel : mean diff=-0.0026  MSE=0.0016  RMSE=0.0398  corr=+0.801
+     fraction parcel<0.5 but ML>0.99 (emulator over-activates): 0.000
+  [Accum]  N=17,552
+     fn_parcel : mean=0.1888  median=0.1323  >0.99=0.003  <0.01=0.028
+     fn_wrf(ML): mean=0.1598  median=0.1048  >0.99=0.002  <0.01=0.180
+     ML-parcel : mean diff=-0.0290  MSE=0.0116  RMSE=0.1078  corr=+0.854
+     fraction parcel<0.5 but ML>0.99 (emulator over-activates): 0.000
+
+Wrote scatter -> /scratch/07088/tg863871/Perlm_Backup/WRF_stam3_ml_mixout_bce_lr1e-4_cosine_more_fix/test/20170714_3aer_org/online/parcel_vs_wrfout_20170714_3aer_org_scatter.png
+Wrote scatter -> /scratch/07088/tg863871/Perlm_Backup/WRF_stam3_ml_mixout_bce_lr1e-4_cosine_more_fix/test/20170714_3aer_org/online/parcel_vs_wrfout_20170714_3aer_org_scatter.eps
+Wrote histogram -> /scratch/07088/tg863871/Perlm_Backup/WRF_stam3_ml_mixout_bce_lr1e-4_cosine_more_fix/test/20170714_3aer_org/online/parcel_vs_wrfout_20170714_3aer_org_hist.png
+Wrote histogram -> /scratch/07088/tg863871/Perlm_Backup/WRF_stam3_ml_mixout_bce_lr1e-4_cosine_more_fix/test/20170714_3aer_org/online/parcel_vs_wrfout_20170714_3aer_org_hist.eps
+
+======================================================================
+fn_parcel = ground-truth Fortran box model on the WRF states;
+fn_wrf    = ML emulator fraction WRF actually applied (FN11/FN21).
+Large ML>0.99 while parcel<0.5 => the deployed emulator over-activates
+on the real WRF distribution (the online saturation).
+======================================================================
+=== done  Mon Aug  3 08:15:47 PM CDT 2026 ===
