@@ -570,35 +570,24 @@ if __name__ == "__main__":
     # ===================================================================
     # MERRA-2 SULFATE + ARM CCN CASE (2-MODE: Aitken + Accumulation)
     # ===================================================================
-    #
-    # Sulfate is predominantly fine-mode aerosol, so we use only the
-    # nuclei (Aitken) and accumulation modes (no coarse).
-    #
-    # Known from observation / ML emulator:
-    #   - Total sulfate mass mixing ratio:  4.5e-10  kg/kg  (MERRA-2)
-    #   - Total CCN number concentration:   200       cm^-3  (ARM)
-    #   - Activation fraction (nuclei):     0.43     (ML emulator)
-    #   - Activation fraction (accum):      0.64     (ML emulator)
-    #
-    # Diameters: Whitby (1978) values matching module_data_sorgam.F:
-    #   nuclei=0.04um, accum=0.16um
-    # ===================================================================
+    # Sulfate is predominantly fine-mode aerosol: nuclei (Aitken) +
+    # accumulation modes only (no coarse).
 
     # --- SORGAM distribution parameters ---
-    dg_nuc    = DGININ_DEFAULT   # 0.04 um
-    dg_acc    = DGINIA_DEFAULT   # 0.16 um
-    sigma_nuc = SGININ_DEFAULT   # 1.70
-    sigma_acc = SGINIA_DEFAULT   # 2.00
+    dg_nuc    = DGININ_DEFAULT
+    dg_acc    = DGINIA_DEFAULT
+    sigma_nuc = SGININ_DEFAULT
+    sigma_acc = SGINIA_DEFAULT
 
-    # --- Observations ---
+    # --- Observations / ML emulator inputs ---
     q_total   = 9.0e-10          # total sulfate mass mixing ratio [kg/kg]
-    CCN_total = 200.0             # total CCN [# cm^-3]
+    CCN_total = 100.0             # total CCN [# cm^-3]
     f_act_nuc = 0.43             # activation fraction, nuclei mode
     f_act_acc = 0.64             # activation fraction, accumulation mode
 
     # --- Assumed number fractions (2-mode, no coarse) ---
-    f_num_nuc = 0.67             # 80% of particles by NUMBER in nuclei
-    f_num_acc = 0.33             # 20% in accumulation
+    f_num_nuc = 0.67             # fraction of particles by NUMBER in nuclei
+    f_num_acc = 0.33             # fraction of particles by NUMBER in accumulation
 
     print(f"  Diameters: nuc={dg_nuc*1e6:.2f} um, acc={dg_acc*1e6:.2f} um")
     print(f"  Sigma:     nuc={sigma_nuc}, acc={sigma_acc}")
@@ -615,8 +604,9 @@ if __name__ == "__main__":
 
     # --- Print results (2-mode only) ---
     print("=" * 70)
-    print("  MERRA-2/ARM 2-mode: q=4.5e-10 kg/kg, CCN=200 cm-3")
-    print("  f_act=0.43/0.64 (nuc/acc), dg=0.04/0.16 um")
+    print(f"  MERRA-2/ARM 2-mode: q={q_total:.2e} kg/kg, CCN={CCN_total:.0f} cm-3")
+    print(f"  f_act={f_act_nuc}/{f_act_acc} (nuc/acc), "
+          f"dg={dg_nuc*1e6:.2f}/{dg_acc*1e6:.2f} um")
     print("=" * 70)
 
     f_act_eff = f_act_nuc * f_num_nuc + f_act_acc * f_num_acc
@@ -683,7 +673,7 @@ if __name__ == "__main__":
             f_act_nuc, f_act_acc, 1.0,
             CCN_total, q_total,
         )
-        marker = " <-- default" if fn == 0.70 else ""
+        marker = " <-- default" if fn == f_num_nuc else ""
         print(f"  {fn:6.2f} {fa:6.2f} | {r['N_total_cm3']:8.2f} |"
               f" {r['frac_nuc']:10.6f} {r['frac_acc']:10.6f} |"
               f" {r['q_nuc']:14.4e} {r['q_acc']:14.4e}{marker}")
